@@ -9,7 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "browser-sync": "^2.9.11",
     "gulp": "^3.9.0",
     "gulp-util": "^3.0.6",
     "recursive-readdir": "^1.2.1",

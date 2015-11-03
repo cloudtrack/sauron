@@ -12,7 +12,9 @@ gulp.task('webpack-dev-server', function() {
   var WebpackDevServer = require('webpack-dev-server')
   var compiler = webpack(require('./webpack.config'))
 
-  compiler.plugin('done', function() {
+  compiler.plugin('done', function(stat) {
+    var duration = stat.endTime - stat.startTime
+    gutil.log('Finished \'' + gutil.colors.cyan('webpack') + '\' after ' + gutil.colors.magenta(duration + ' ms'))
   })
 
   new WebpackDevServer(compiler, {

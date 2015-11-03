@@ -18,7 +18,6 @@ gulp.task('webpack-dev-server', function() {
   })
 
   new WebpackDevServer(compiler, {
-    publicPath: '/build/',
     hot: true,
     quiet: false,
     noInfo: true,

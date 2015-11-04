@@ -4,7 +4,7 @@ Lambda codes for collect logs from AWS CloudWatch
 
 ## AMI Setting
 
-Lambda function needs permission to access CloudWatch.
+Lambda function needs permission to access CloudWatch.  
 Instead of AccessId and SecretKey, use follwing AMI policy from [docs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/UsingIAM.html#UsingWithCloudWatch_Actions)
 
 ```json

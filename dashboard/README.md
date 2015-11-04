@@ -41,3 +41,28 @@ Run `gulp serve` command with foreman. It will automatically build webpack.
 ```sh
   $ foreman run gulp serve
 ```
+
+## Deploying
+
+S3 Bucket must be set up with static website hosting feature turned on, and bucket `list` permission should be granted to `Everyone`.
+
+Also to serve as single page application, when requested to non-existing path, it should redirect to index path. You can configure S3 bucket redirection rule as following:
+
+```
+<RoutingRules>
+    <RoutingRule>
+        <Condition>
+            <HttpErrorCodeReturnedEquals>404</HttpErrorCodeReturnedEquals>
+        </Condition>
+        <Redirect>
+            <HostName>YOURDOMAIN</HostName>
+            <ReplaceKeyPrefixWith>#!/</ReplaceKeyPrefixWith>
+        </Redirect>
+    </RoutingRule>
+</RoutingRules>
+```
+
+Once S3 setup is complete, you can deploy to S3 by running
+```sh
+$ foreman run gulp deploy
+```

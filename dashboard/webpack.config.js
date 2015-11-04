@@ -1,5 +1,7 @@
 var path = require('path')
 var webpack = require('webpack')
+var ExtractTextPlugin = require('extract-text-webpack-plugin')
+var PathRewriterPlugin = require('webpack-path-rewriter')
 
 module.exports = {
   entry: {
@@ -27,18 +29,28 @@ module.exports = {
         test: /\.(gif|png|jpg)$/, loader: 'file'
       },
       {
-        test: /\.scss$/, loader: 'style-loader!css-loader!sass?outputStyle=expanded&' +
+        test: /\.scss$/, loader: ExtractTextPlugin.extract('style-loader', 'css!sass?outputStyle=expanded&' +
           'includePaths[]=' +
-            (path.resolve(__dirname, 'node_modules', 'foundation-sites', 'scss'))
+            (path.resolve(__dirname, 'node_modules', 'foundation-sites', 'scss')))
+      },
+      {
+        test: /\.jade$/,
+        loader: PathRewriterPlugin.rewriteAndEmit({
+          name: '[name].html',
+          loader: 'jade-html?' + JSON.stringify({ pretty: true })
+        })
       }
     ]
   },
   output: {
-    path: path.resolve(__dirname, 'public', 'build'),
-    publicPath: '/build/',
-    filename: '[name].bundle.js',
-    chunkFilename: '[id].bundle.js'
+    path: path.resolve(__dirname, '_dist'),
+    publicPath: '/',
+    filename: '[name]-[chunkhash].js'
   },
+  plugins: [
+    new ExtractTextPlugin('index-[contenthash].css', { allChunks: true }),
+    new PathRewriterPlugin()
+  ],
   resolve: {
     root: path.join(__dirname, 'app'),
     modulesDirectories: ['app', 'node_modules'],

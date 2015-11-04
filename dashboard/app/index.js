@@ -1,5 +1,6 @@
 'use strict';
 
+require('index.jade')
 require('styles/index.scss')
 
 import app from './app'

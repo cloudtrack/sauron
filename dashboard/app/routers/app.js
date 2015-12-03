@@ -4,11 +4,13 @@ import { Router, history } from 'backbone'
 import app from '../app'
 import RootView from '../views/root'
 import ConfigView from '../views/config'
+import ChartsView from '../views/charts'
 
 export default class AppRouter extends Router {
   constructor(options) {
     super(options)
     this.routes = {
+      "charts": "charts",
       "config": "setting",
       '': 'root'
     }
@@ -17,7 +19,7 @@ export default class AppRouter extends Router {
 
   setView(view) {
     app.currentView = view
-    app.mainContainer.append(view.$el)
+    app.mainContainer.html(view.$el);
   }
 
   root() {
@@ -25,7 +27,10 @@ export default class AppRouter extends Router {
   }
 
   setting() {
-    console.log("setting fired")
     this.setView(new ConfigView().render())
+  }
+
+  charts() {
+    this.setView(new ChartsView().render())
   }
 }

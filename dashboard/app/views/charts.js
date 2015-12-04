@@ -1,8 +1,7 @@
 import { View } from 'backbone'
 import Chart from 'chart.js'
-import Metric from '../models/metric'
-import Metrics from '../models/metricCollection'
 
+import app from '../app'
 import chartSmallView from './chartSmall'
 
 export default class RootView extends View {
@@ -10,15 +9,11 @@ export default class RootView extends View {
     super(options)
     this.template = require('templates/charts_view.hbs')
     this.views = [];
-    this.charts = new Metrics();
-    for (var i = 0; i < 4; i++) {
-    	this.charts.push(new Metric({ id: i }))
-    }
   }
 
   render() {
     this.$el.html(this.template())
-    this.charts.each(function(metric) {
+    app.charts.each(function(metric) {
     	var view = new chartSmallView({ model: metric });
     	this.views.push(view);
     	this.$('#chart-grid').append(view.render().el);

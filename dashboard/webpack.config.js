@@ -11,7 +11,7 @@ module.exports = {
     loaders: [
       {
         test: /\.js$/,
-        exclude: /(node_modules|bower_components)/,
+        exclude: /(node_modules|bower_components|vendor)/,
         loader: 'babel',
         query: {
           presets: ['es2015']
@@ -39,6 +39,10 @@ module.exports = {
           name: '[name].html',
           loader: 'jade-html?' + JSON.stringify({ pretty: true })
         })
+      },
+      {
+        test: /vendor\/.+\.(jsx|js)$/,
+        loader: 'imports?jQuery=jquery'
       }
     ]
   },

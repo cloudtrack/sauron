@@ -31,6 +31,8 @@ export default class AppRouter extends Router {
   }
 
   charts() {
-    this.setView(new ChartsView().render())
+    var chartView = new ChartsView();
+    this.setView(chartView.render());
+    chartView.drawChart();
   }
 }

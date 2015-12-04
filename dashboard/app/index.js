@@ -23,9 +23,9 @@ $(() => {
   new AppRouter()
 
   // Initial data
-  app.charts = new Metrics();
+  app.metrics = new Metrics();
   for (var i = 0; i < 4; i++) {
-  	app.charts.push(new Metric({ id: i }))
+  	app.metrics.push(new Metric({ id: i, title: i + "th chart" }))
   }
 
   Backbone.history.start()

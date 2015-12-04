@@ -13,7 +13,7 @@ export default class RootView extends View {
 
   render() {
     this.$el.html(this.template())
-    app.charts.each(function(metric) {
+    app.metrics.each(function(metric) {
     	var view = new chartSmallView({ model: metric });
     	this.views.push(view);
     	this.$('#chart-grid').append(view.render().el);

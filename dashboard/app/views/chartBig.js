@@ -2,15 +2,12 @@ import Backbone from 'backbone'
 import Chart from 'chart.js'
 
 module.exports = Backbone.View.extend({
-  template: require('templates/chart_small_view.hbs'),
+  template: require('templates/chart_big_view.hbs'),
 
   className: 'chartBox',
 
   render: function() {
-    this.$el.html(this.template({
-      title: this.model.get('title'),
-      id: this.model.get('id')
-    }))
+    this.$el.html(this.template({ title: this.model.get('title') }))
     return this
   },
 

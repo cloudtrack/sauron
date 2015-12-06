@@ -7,4 +7,8 @@ export default class ServiceCollection extends ESCollection {
     this.model = ServiceModel
     this.indexName = 'services'
   }
+
+  parse(resp) {
+    return resp.hits.hits
+  }
 }

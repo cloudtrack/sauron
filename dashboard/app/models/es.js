@@ -1,5 +1,6 @@
 import app from '../app'
 import { Model, Collection } from 'backbone'
+import ESSync from '../es_sync'
 
 export default class ESModel extends Model {
   constructor(options) {
@@ -31,6 +32,9 @@ export default class ESModel extends Model {
     )
   }
 
+  sync() {
+    return ESSync.apply(this, arguments)
+  }
 }
 
 export class ESCollection extends Collection {
@@ -38,4 +42,7 @@ export class ESCollection extends Collection {
     super(options)
   }
 
+  sync() {
+    return ESSync.apply(this, arguments)
+  }
 }

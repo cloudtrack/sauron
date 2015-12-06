@@ -48,8 +48,11 @@ module.exports = {
     filename: '[name]-[chunkhash].js'
   },
   plugins: [
+    new webpack.DefinePlugin({
+      ELASTICSEARCH_HOST: JSON.stringify(process.env.ELASTICSEARCH_HOST)
+    }),
     new ExtractTextPlugin('index-[contenthash].css', { allChunks: true }),
-    new PathRewriterPlugin()
+    new PathRewriterPlugin({ includeHash: true })
   ],
   resolve: {
     root: path.join(__dirname, 'app'),

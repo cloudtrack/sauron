@@ -11,6 +11,9 @@ import _ from 'lodash'
 import AppView from './views/app'
 import AppRouter from './routers/app'
 
+import Metric from './models/metric'
+import Metrics from './models/metricCollection'
+
 $(() => {
   // Global event bus.
   app.globalEvents = _.extend({}, Backbone.Events)
@@ -19,5 +22,11 @@ $(() => {
   // Backbone router
   new AppRouter()
 
-  Backbone.history.start({ pushState: true })
+  // Initial data
+  app.metrics = new Metrics();
+  for (var i = 0; i < 4; i++) {
+  	app.metrics.push(new Metric({ id: i, title: i + "th chart" }))
+  }
+
+  Backbone.history.start()
 })

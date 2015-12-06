@@ -61,5 +61,6 @@ module.exports = {
       underscore: 'lodash'
     },
     extentions: ['', '.js', '.html', '.hbs', '.css', 'scss']
-  }
+  },
+  devtool: 'eval'
 }

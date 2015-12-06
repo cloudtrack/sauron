@@ -13,6 +13,7 @@ import AppRouter from './routers/app'
 
 import Metric from './models/metric'
 import Metrics from './models/metricCollection'
+import ServiceModel from './models/service'
 
 $(() => {
   // Global event bus.
@@ -27,6 +28,8 @@ $(() => {
   for (var i = 0; i < 4; i++) {
   	app.metrics.push(new Metric({ id: i, title: i + "th chart" }))
   }
+
+  (new ServiceModel).ensureIndex()
 
   Backbone.history.start()
 })

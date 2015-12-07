@@ -2,9 +2,17 @@ import app from '../app'
 import { Model, Collection } from 'backbone'
 import ESSync from '../es_sync'
 
-export default class ESModel extends Model {
+class ESModel extends Model {
   constructor(options) {
     super(options)
+  }
+
+  get indexName () {
+    return this.constructor.indexName
+  }
+
+  get typeName () {
+    return this.constructor.typeName
   }
 
   ensureIndex() {
@@ -37,12 +45,23 @@ export default class ESModel extends Model {
   }
 }
 
-export class ESCollection extends Collection {
+class ESCollection extends Collection {
   constructor(options) {
     super(options)
+  }
+
+  get indexName () {
+    return this.constructor.indexName
+  }
+
+  get typeName () {
+    return this.constructor.typeName
   }
 
   sync() {
     return ESSync.apply(this, arguments)
   }
 }
+
+export default ESModel
+export { ESCollection }

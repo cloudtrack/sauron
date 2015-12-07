@@ -7,6 +7,10 @@ class ESModel extends Model {
     super(options)
   }
 
+  get idAttribute () {
+    return this.constructor.idAttribute
+  }
+
   get indexName () {
     return this.constructor.indexName
   }
@@ -44,6 +48,8 @@ class ESModel extends Model {
     return ESSync.apply(this, arguments)
   }
 }
+
+ESModel.idAttribute = '_id'
 
 class ESCollection extends Collection {
   constructor(options) {

@@ -11,5 +11,8 @@ export default class AppView extends View {
     app.mainContainer = this.$('#main-container')
     var services = new ServiceCollection
     services.fetch()
+    services.on('sync', function(services, resp) {
+      console.log(services, resp)
+    })
   }
 }

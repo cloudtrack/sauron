@@ -16,6 +16,9 @@ import Metrics from './models/metricCollection'
 import ServiceModel from './models/service'
 
 $(() => {
+  // Ensure ES indices exist
+  (new ServiceModel).ensureIndex()
+
   // Global event bus.
   app.globalEvents = _.extend({}, Backbone.Events)
   // Application level view
@@ -28,8 +31,6 @@ $(() => {
   for (var i = 0; i < 4; i++) {
   	app.metrics.push(new Metric({ id: i, title: i + "th chart" }))
   }
-
-  (new ServiceModel).ensureIndex()
 
   Backbone.history.start()
 })

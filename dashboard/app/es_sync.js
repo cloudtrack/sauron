@@ -2,20 +2,20 @@ import Backbone from 'backbone'
 import app from './app'
 
 module.exports = Backbone.ESSync = function sync(method, model, options) {
-  var resp
+  var request
 
   switch (method) {
     case 'read':
-      var params = { index: model.indexName }
+      var params = { index: model.indexName, type: model.typeName }
       if (model.id) {
         params._id = model.id
       }
-      resp = app.es.search(params)
+      request = app.es.search(params)
       break
     case 'create':
-      var params = { index: model.indexName }
+      var params = { index: model.indexName, type: model.typeName }
       params.body = options.attrs || model.toJSON(options)
-      resp = app.es.create(params)
+      request = app.es.create(params)
       break
     case 'update':
       break
@@ -23,6 +23,14 @@ module.exports = Backbone.ESSync = function sync(method, model, options) {
       break
   }
 
-  model.trigger('request', model, resp, options)
-  return resp
+  request.done(function(resp) {
+    options.success(resp)
+  })
+
+  request.fail(function(err) {
+    options.error(err)
+  })
+
+  model.trigger('request', model, request, options)
+  return request
 }

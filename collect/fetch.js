@@ -25,24 +25,27 @@ exports.handler = function(event, context) {
     if (err)
       console.log(err, err.stack);
     else {
-      console.log(data);
-      client.create({
-        index: 'services',
-        //http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/aws-namespaces.html
-        //we can omit 'AWS/' parts
-        type: params.Namespace.split('/')[1],
-        body: {
-          date: data.Datapoints[0].Timestamp,
+      var actions = [];
+      data.Datapoints.forEach(function(element) {
+        actions.push({
+          index: {
+            _index: 'services',
+            //http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/aws-namespaces.html
+            //we can omit 'AWS/' parts
+            _type: params.Namespace.split('/')[1],
+          }
+        });
+        actions.push({
+          date: element.Timestamp,
           metric: params.MetricName,
-          value: data.Datapoints[0].Average
-        }
-      }, function (error, response) {
-        if (err) {
-          console.log(error);
-        } else {
-          // console.log(response);
-        }
-      })
+          value: element.Average
+        });
+      });
+
+      client.bulk({ body: actions }, function(err, rest) {
+        if (err)
+          console.log(err);
+      });
     }
   });
 }

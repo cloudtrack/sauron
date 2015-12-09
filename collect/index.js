@@ -30,8 +30,8 @@ exports.handler = function(event, context) {
         actions.push({
           index: {
             _index: 'services',
-            //http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/aws-namespaces.html
-            //we can omit 'AWS/' parts
+            // http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/aws-namespaces.html
+            // We can omit 'AWS/': all namespaces starts with it.
             _type: params.Namespace.split('/')[1],
           }
         });

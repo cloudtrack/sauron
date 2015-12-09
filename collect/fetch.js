@@ -1,6 +1,7 @@
 console.log('Loading function');
 
 var aws = require('aws-sdk');
+aws.config.update({region: 'ap-northeast-1'});
 var CloudWatch = new aws.CloudWatch({apiVersion: '2010-08-01'});
 
 exports.handler = function(event, context) {

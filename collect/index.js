@@ -6,8 +6,7 @@ var CloudWatch = new aws.CloudWatch({apiVersion: '2010-08-01'});
 
 var ES = require('elasticsearch');
 var client = new ES.Client({
-  host: 'https://search-sauron-j75hyivu5hfn4sayixpwx6gmru.ap-northeast-1.es.amazonaws.com',
-  log: 'trace'
+  host: 'https://search-sauron-j75hyivu5hfn4sayixpwx6gmru.ap-northeast-1.es.amazonaws.com'
 });
 
 exports.handler = function(event, context) {

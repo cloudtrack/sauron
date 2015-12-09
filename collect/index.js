@@ -42,9 +42,11 @@ exports.handler = function(event, context) {
         });
       });
 
-      client.bulk({ body: actions }, function(err, rest) {
+      client.bulk({ body: actions }, function(err, resp) {
         if (err)
           console.log(err);
+        else
+          context.succeed(resp);
       });
     }
   });

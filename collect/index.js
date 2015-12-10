@@ -28,7 +28,7 @@ exports.handler = function(event, context) {
       data.Datapoints.forEach(function(element) {
         actions.push({
           index: {
-            _index: 'services',
+            _index: 'metrics',
             // http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/aws-namespaces.html
             // We can omit 'AWS/': all namespaces starts with it.
             _type: params.Namespace.split('/')[1],

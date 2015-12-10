@@ -12,46 +12,57 @@ var client = new ES.Client({
   host: 'https://search-sauron-j75hyivu5hfn4sayixpwx6gmru.ap-northeast-1.es.amazonaws.com'
 });
 
+var metricList = require('./metricList.js')
+
 exports.handler = function(event, context) {
-  var params = {
+  var commonParams = {
     StartTime: new Date(new Date().setTime(new Date().getTime() - 5*60*1000)),
     EndTime: new Date(),
-    Namespace: 'AWS/EC2',
-    Period: 60,
-    MetricName: 'CPUUtilization',
-    Statistics: ['Average'],
-    Unit: 'Percent'
+    Period: 60
   };
-
-  CloudWatch.getMetricStatistics(params, function(err, data) {
-    if (err)
-      console.log(err, err.stack);
-    else {
-      var actions = _.reduceRight(data.Datapoints,
-        function(flattend, other) {
-          return flattend.concat([
-          {
-            index: {
-              _index: 'metrics',
-              // http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/aws-namespaces.html
-              // We can omit 'AWS/': all namespaces starts with it.
-              _type: params.Namespace.split('/')[1],
-            }
-          },
-          {
-            date: other.Timestamp,
-            metric: params.MetricName,
-            value: other.Average
-          }
-          ]);
-        }, []);
-      client.bulk({ body: actions }, function(err, resp) {
-        if (err)
-          console.log(err);
-        else
-          context.succeed(resp);
-      });
-    }
+  var paramsList = _.map(metricList, function(metricParams) {
+    return _.merge(metricParams, commonParams);
   });
 
+  async.each(paramsList,
+    function(params, callback) {
+      CloudWatch.getMetricStatistics(params, function(err, data) {
+        if (err)
+          console.log(err, err.stack);
+        else {
+          var actions = makeActions(params, data.Datapoints);
+          client.bulk({ body: actions }, function(err, resp) {
+            if (err)
+              console.log(err);
+            else
+              callback();
+          });
+        }
+    })},
+    function (err) { //when done
+      if (err)
+        console.log(err);
+      else
+        context.succeed();
+  });
+};
+
+function makeActions(params, datapoints) {
+  return _.reduceRight(datapoints, function(flattend, other) {
+    return flattend.concat([
+      {
+        index: {
+          _index: 'metrics',
+          // http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/aws-namespaces.html
+          // We can omit 'AWS/': all namespaces starts with it.
+          _type: params.Namespace.split('/')[1],
+        }
+      },
+      {
+        date: other.Timestamp,
+        metric: params.MetricName,
+        value: other[params.Statistics[0]]
+      }
+    ]);
+  }, []);
 };

@@ -1,5 +1,8 @@
 console.log('Loading function');
 
+var async = require('async');
+var _ = require('lodash');
+
 var aws = require('aws-sdk');
 aws.config.update({region: 'ap-northeast-1'});
 var CloudWatch = new aws.CloudWatch({apiVersion: '2010-08-01'});
@@ -20,27 +23,28 @@ exports.handler = function(event, context) {
     Unit: 'Percent'
   };
 
- CloudWatch.getMetricStatistics(params, function(err, data) {
+  CloudWatch.getMetricStatistics(params, function(err, data) {
     if (err)
       console.log(err, err.stack);
     else {
-      var actions = [];
-      data.Datapoints.forEach(function(element) {
-        actions.push({
-          index: {
-            _index: 'metrics',
-            // http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/aws-namespaces.html
-            // We can omit 'AWS/': all namespaces starts with it.
-            _type: params.Namespace.split('/')[1],
+      var actions = _.reduceRight(data.Datapoints,
+        function(flattend, other) {
+          return flattend.concat([
+          {
+            index: {
+              _index: 'metrics',
+              // http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/aws-namespaces.html
+              // We can omit 'AWS/': all namespaces starts with it.
+              _type: params.Namespace.split('/')[1],
+            }
+          },
+          {
+            date: other.Timestamp,
+            metric: params.MetricName,
+            value: other.Average
           }
-        });
-        actions.push({
-          date: element.Timestamp,
-          metric: params.MetricName,
-          value: element.Average
-        });
-      });
-
+          ]);
+        }, []);
       client.bulk({ body: actions }, function(err, resp) {
         if (err)
           console.log(err);
@@ -49,4 +53,5 @@ exports.handler = function(event, context) {
       });
     }
   });
-}
+
+};

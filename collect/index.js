@@ -12,14 +12,14 @@ var client = new ES.Client({
   host: 'https://search-sauron-j75hyivu5hfn4sayixpwx6gmru.ap-northeast-1.es.amazonaws.com'
 });
 
-var metricList = require('./metricList.js')
+var metricList = require('./metricList.js');
+var commonParams = {
+  StartTime: new Date(new Date().setTime(new Date().getTime() - 5*60*1000)),
+  EndTime: new Date(),
+  Period: 60
+};
 
 exports.handler = function(event, context) {
-  var commonParams = {
-    StartTime: new Date(new Date().setTime(new Date().getTime() - 5*60*1000)),
-    EndTime: new Date(),
-    Period: 60
-  };
   var paramsList = _.map(metricList, function(metricParams) {
     return _.merge(metricParams, commonParams);
   });
@@ -32,18 +32,14 @@ exports.handler = function(event, context) {
         else {
           var actions = makeActions(params, data.Datapoints);
           client.bulk({ body: actions }, function(err, resp) {
-            if (err)
-              console.log(err);
-            else
-              callback();
+            if (err) { console.log(err); }
+            else     { callback(); }
           });
         }
     })},
     function (err) { //when done
-      if (err)
-        console.log(err);
-      else
-        context.succeed();
+      if (err)  { console.log(err); }
+      else      { context.succeed(); }
   });
 };
 
@@ -53,8 +49,6 @@ function makeActions(params, datapoints) {
       {
         index: {
           _index: 'metrics',
-          // http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/aws-namespaces.html
-          // We can omit 'AWS/': all namespaces starts with it.
           _type: params.Namespace.split('/')[1],
         }
       },

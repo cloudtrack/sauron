@@ -5,6 +5,7 @@ var path = require('path')
 var recursiveReaddir = require('recursive-readdir')
 var S3Plugin = require('webpack-s3-plugin')
 var webpackDevServerPort = (process.env.WEBPACK_DEV_SERVER_PORT || 8888)
+var touch = require('touch')
 
 gulp.task('default', function() {
 })
@@ -31,6 +32,9 @@ gulp.task('webpack-dev-server', function() {
 })
 
 gulp.task('serve', ['webpack-dev-server'], function() {
+  gulp.watch('./app/**/*', function() {
+    touch('./app/index.jade')
+  })
 })
 
 gulp.task('webpack', function(done) {

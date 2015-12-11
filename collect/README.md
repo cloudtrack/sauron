@@ -23,3 +23,16 @@ Instead of AccessId and SecretKey, use follwing AMI policy from [docs](http://do
    ]
 }
 ```
+
+## Deploying
+
+Please be careful not to zip folder, *lambda* expects only contents to be zipped.  
+In OSX, choosing multiple files and compress them using default archive utility led me repeated error.  
+I **strongly** recommend using commands like below
+```sh
+zip -r ../collect.zip *
+```
+or
+```sh
+./pack.sh
+```

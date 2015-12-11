@@ -1,0 +1,17 @@
+{
+  "name": "collect",
+  "version": "1.0.0",
+  "description": "Lambda codes for collect logs from AWS CloudWatch",
+  "main": "fetch.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^1.5.0",
+    "aws-sdk": "^2.2.22",
+    "elasticsearch": "^10.0.1",
+    "lodash": "^3.10.1"
+  }
+}

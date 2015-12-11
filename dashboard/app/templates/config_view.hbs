@@ -1,1 +1,47 @@
-<h1>If you tame me, then we shall need each other.</h1>
+<h4>New Instance</h4>
+<form>
+	<div class="row">
+		<div class="large-2 columns">
+			<label>Function
+				<input type="text" placeholder="eg)EC2, ELB, S3">
+			</label>
+		</div>
+		<div class="large-2 columns">
+			<label>Instance ID
+				<input type="text" placeholder="eg)i-5027bfa3">
+			</label>
+		</div>
+		<div class="large-3 columns">
+			<label>Tags
+				<input type="text" placeholder="eg)사우론/프로젝트/성공적">
+			</label>
+		</div>
+		<div class="large-4 columns">
+			<label>Memo
+				<input type="text" placeholder="eg)메리크리스마스">
+			</label>
+		</div>
+		<div class="large-1 columns">
+			<input type="submit" class="button" value="추가">
+		</div>
+	</div>
+</form>
+<h4>Current Instances</h4>
+<table>
+	<thead>
+		<tr>
+			<th width="150">Function</th>
+			<th width="150">Instance ID</th>
+			<th width="200">Tags</th>
+			<th width="300">Memo</th>
+		</tr>
+	</thead>
+	<tbody>
+		{{#each items}}
+		<td>{{function}}</td>
+		<td>{{instanceID}}</td>
+		<td>{{tags}}</td>
+		<td>{{memo}}</td>
+		{{/each}}
+	</tbody>
+</table>

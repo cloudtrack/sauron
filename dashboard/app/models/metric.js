@@ -1,5 +1,5 @@
 import Backbone from 'backbone'
-var sampleData = require('json!../data/sample.json');
+var sampleData = require('json!../data/sample2.json');
 
 module.exports = Backbone.Model.extend({
 	defaults: {

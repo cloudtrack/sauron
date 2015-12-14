@@ -13,8 +13,15 @@ import AppRouter from './routers/app'
 
 import Metric from './models/metric'
 import Metrics from './models/metricCollection'
+import ServiceModel from './models/service'
+
+require('imports?jQuery=jquery!foundation-sites/js/foundation')
 
 $(() => {
+  // Ensure ES indices exist
+  //(new ServiceModel).removeIndex()
+  (new ServiceModel).ensureIndex()
+
   // Global event bus.
   app.globalEvents = _.extend({}, Backbone.Events)
   // Application level view
@@ -29,4 +36,6 @@ $(() => {
   }
 
   Backbone.history.start()
+
+  $(document).foundation()
 })

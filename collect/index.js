@@ -14,7 +14,7 @@ var client = new ES.Client({
 
 var metricList = require('./metricList.js');
 var commonParams = {
-  StartTime: new Date(new Date().setTime(new Date().getTime() - 5*60*1000)),
+  StartTime: new Date(new Date().setTime(new Date().getTime() - 5*60*1000 - 100)),
   EndTime: new Date(),
   Period: 60
 };

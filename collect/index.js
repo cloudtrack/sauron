@@ -32,14 +32,14 @@ exports.handler = function(event, context) {
         else {
           var actions = makeActions(params, data.Datapoints);
           client.bulk({ body: actions }, function(err, resp) {
-            if (err) { console.log(err); }
-            else     { callback(); }
+            if (err)  console.log(err);
+            else      callback();
           });
         }
     })},
     function (err) { //when done
-      if (err)  { console.log(err); }
-      else      { context.succeed(); }
+      if (err)  console.log(err);
+      else      context.succeed();
   });
 };
 

@@ -6,10 +6,6 @@ class ServiceCollection extends ESCollection {
     super(options)
     this.model = ServiceModel
   }
-
-  parse(resp) {
-    return resp.hits.hits
-  }
 }
 
 ServiceCollection.indexName = 'services'

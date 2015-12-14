@@ -1,6 +1,7 @@
 import app from '../app'
 import { Model, Collection } from 'backbone'
 import ESSync from '../es_sync'
+import _ from 'lodash'
 
 class ESModel extends Model {
   constructor(options) {
@@ -44,6 +45,16 @@ class ESModel extends Model {
     )
   }
 
+  removeIndex() {
+    app.es.indices.delete({ index: this.indexName }).then(
+      function() {
+        console.log('Index deleted successfully')
+      }, function() {
+        console.log('Failed to deleted index')
+      }
+    )
+  }
+
   sync() {
     return ESSync.apply(this, arguments)
   }
@@ -66,6 +77,12 @@ class ESCollection extends Collection {
 
   sync() {
     return ESSync.apply(this, arguments)
+  }
+
+  parse(resp) {
+    return _.map(resp.hits.hits, function (doc) {
+      return _.merge(doc._source, { _id: doc._id })
+    })
   }
 }
 

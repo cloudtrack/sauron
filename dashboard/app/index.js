@@ -1,5 +1,6 @@
 'use strict';
 
+require('aws-sdk/dist/aws-sdk')
 require('index.jade')
 require('styles/index.scss')
 
@@ -16,6 +17,13 @@ import Metrics from './models/metricCollection'
 import ServiceModel from './models/service'
 
 require('imports?jQuery=jquery!foundation-sites/js/foundation')
+
+AWS.config.update({
+  accessKeyId: AWS_ACCESS_KEY_ID,
+  secretAccessKey: AWS_SECRET_ACCESS_KEY
+})
+AWS.config.region = AWS_REGION
+
 
 $(() => {
   // Ensure ES indices exist

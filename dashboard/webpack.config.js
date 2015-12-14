@@ -49,7 +49,10 @@ module.exports = {
   },
   plugins: [
     new webpack.DefinePlugin({
-      ELASTICSEARCH_HOST: JSON.stringify(process.env.ELASTICSEARCH_HOST)
+      ELASTICSEARCH_HOST: JSON.stringify(process.env.ELASTICSEARCH_HOST),
+      AWS_ACCESS_KEY_ID: JSON.stringify(process.env.AWS_ACCESS_KEY_ID),
+      AWS_SECRET_ACCESS_KEY: JSON.stringify(process.env.AWS_SECRET_ACCESS_KEY),
+      AWS_REGION: JSON.stringify(process.env.AWS_REGION)
     }),
     new ExtractTextPlugin('index-[contenthash].css', { allChunks: true }),
     new PathRewriterPlugin({ includeHash: true })

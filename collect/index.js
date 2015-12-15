@@ -48,7 +48,8 @@ exports.handler = function(event, context) {
       });
     },
     updateEC2Resources,
-    updateRDSResources
+    updateRDSResources,
+    updateELBResources
   ],
   function(err, results) {
     context.succeed()
@@ -86,6 +87,9 @@ function upsertResourceQuery(instance, type) {
       break
     case 'rds':
       _id = instance.DbiResourceId
+      break
+    case 'elb':
+      _id = instance.LoadBalancerName
       break
   }
 
@@ -134,6 +138,28 @@ function updateRDSResources(callback) {
     }, function(err, tagLists) {
       var instancesWithTags = _.zipWith(data.DBInstances, tagLists, function (instance, tagList) { return _.merge(instance, { Tags: tagList }) })
       var updates = _.flatten(_.map(instancesWithTags, function (i) { return upsertResourceQuery(i, 'rds') }))
+      client.bulk({ body: updates }, function(err, resp) {
+        if (err) { return callback(err) }
+        callback(null)
+      })
+    })
+  })
+}
+
+function updateELBResources(callback) {
+  ELB.describeLoadBalancers({}, function(err, data) {
+    if (err) {
+      console.log('Failed to fetch ELB Instances')
+      return
+    }
+
+    var elbInstances = data.LoadBalancerDescriptions
+
+    ELB.describeTags({
+      LoadBalancerNames: _.pluck(elbInstances, 'LoadBalancerName')
+    }, function(err, data) {
+      var instancesWithTags = _.zipWith(elbInstances, data.TagDescriptions, function (instance, tagDescription) { return _.merge(instance, { Tags: tagDescription.Tags }) })
+      var updates = _.flatten(_.map(instancesWithTags, function (i) { return upsertResourceQuery(i, 'elb') }))
       client.bulk({ body: updates }, function(err, resp) {
         if (err) { return callback(err) }
         callback(null)

@@ -1,19 +1,10 @@
-function convertToChartjsData(esResp) {
-  var labels = []
-  var datas = []
+import _ from 'lodash'
 
-  esResp.hits.hits.forEach(function(val, idx) {
-    // labels.push(val._source.date.toTimeString().split(' ')[0].slice(0, -3))
-    var date = new Date(val._source.date).toTimeString();
-    if (idx % 2)
-      labels.push(date.slice(0,5))
-    else
-      labels.push('')
-    datas.push(val._source.value)
-  })
-
+function convertToChartjsData(labels, datas) {
   var chartjsData = {}
-  chartjsData.labels = labels.reverse()
+  chartjsData.labels = _.map(labels, function(item) {
+    return new Date(item).toTimeString().slice(0, 5)
+  })
   chartjsData.datasets = [{
     label: 'hell',
     //from chart.js example
@@ -23,10 +14,9 @@ function convertToChartjsData(esResp) {
     pointStrokeColor: "#fff",
     pointHighlightFill: "#fff",
     pointHighlightStroke: "rgba(220,220,220,1)",
-    data: datas.reverse()
+    data: datas
   }]
 
-  // console.log(chartjsData)
   return chartjsData
 }
 

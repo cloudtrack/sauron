@@ -14,7 +14,7 @@ var client = new ES.Client({
 
 var metricList = require('./metricList.js');
 var commonParams = {
-  StartTime: new Date(new Date().setTime(new Date().getTime() - 5*60*1000)),
+  StartTime: new Date(new Date().setTime(new Date().getTime() - 5*60*1000 - 100)),
   EndTime: new Date(),
   Period: 60
 };
@@ -32,14 +32,14 @@ exports.handler = function(event, context) {
         else {
           var actions = makeActions(params, data.Datapoints);
           client.bulk({ body: actions }, function(err, resp) {
-            if (err) { console.log(err); }
-            else     { callback(); }
+            if (err)  console.log(err);
+            else      callback();
           });
         }
     })},
     function (err) { //when done
-      if (err)  { console.log(err); }
-      else      { context.succeed(); }
+      if (err)  console.log(err);
+      else      context.succeed();
   });
 };
 

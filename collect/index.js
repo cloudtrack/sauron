@@ -75,7 +75,7 @@ function makeActions(params, datapoints) {
 };
 
 function constructRDSInstanceARN(instance) {
-  return 'arn:aws:rds:ap-northeast-1:ACCOUNT_ID:db:' + instance.DBInstanceIdentifier
+  return ['arn:aws:rds', process.env.AWS_REGION, 'ACCOUNT_ID:db', instance.DBInstanceIdentifier].join(':')
 }
 
 function upsertResourceQuery(instance, type) {

@@ -1,18 +1,18 @@
-var _ = require('lodash');
+function convertToChartjsData(esResp) {
+  var labels = []
+  var datas = []
 
-function convertToChartjsData(awsData) {
-  var labels = [];
-  var datas = [];
+  esResp.hits.hits.forEach(function(val, idx) {
+    // labels.push(val._source.date.toTimeString().split(' ')[0].slice(0, -3))
+    var date = new Date(val._source.date)
+    labels.push(date.getHours() + ":" + date.getMinutes())
+    datas.push(val._source.value)
+  })
 
-  _.forEach(awsData.Datapoints, function(val, idx) {
-    labels.push(val.Timestamp.toTimeString().split(' ')[0].slice(0, -3));
-    datas.push(val.Average);
-  });
-
-  var chartjsData = {};
-  chartjsData.labels = labels;
+  var chartjsData = {}
+  chartjsData.labels = labels.reverse()
   chartjsData.datasets = [{
-    label: awsData.Label,
+    label: 'hell',
     //from chart.js example
     fillColor: "rgba(220,220,220,0.2)",
     strokeColor: "rgba(220,220,220,1)",
@@ -20,10 +20,11 @@ function convertToChartjsData(awsData) {
     pointStrokeColor: "#fff",
     pointHighlightFill: "#fff",
     pointHighlightStroke: "rgba(220,220,220,1)",
-    data: datas
+    data: datas.reverse()
   }]
 
-  return chartjsData;
-};
+  // console.log(chartjsData)
+  return chartjsData
+}
 
-module.exports = convertToChartjsData;
+module.exports = convertToChartjsData

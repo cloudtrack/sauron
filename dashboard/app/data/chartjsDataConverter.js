@@ -4,8 +4,11 @@ function convertToChartjsData(esResp) {
 
   esResp.hits.hits.forEach(function(val, idx) {
     // labels.push(val._source.date.toTimeString().split(' ')[0].slice(0, -3))
-    var date = new Date(val._source.date)
-    labels.push(date.getHours() + ":" + date.getMinutes())
+    var date = new Date(val._source.date).toTimeString();
+    if (idx % 2)
+      labels.push(date.slice(0,5))
+    else
+      labels.push('')
     datas.push(val._source.value)
   })
 

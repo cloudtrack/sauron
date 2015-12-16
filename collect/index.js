@@ -162,7 +162,14 @@ function upsertResourceQuery(instance, type) {
 }
 
 function fetchEC2Resources(callback) {
-  EC2.describeInstances({}, function(err, data) {
+  EC2.describeInstances({
+    Filters: [
+      {
+        Name: 'tag-key',
+        Values: ['serviceId']
+      }
+    ]
+  }, function(err, data) {
     if (err) {
       console.log('Failed to fetch EC2 Instances')
       return callback(err)

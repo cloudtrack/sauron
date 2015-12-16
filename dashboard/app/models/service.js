@@ -8,8 +8,6 @@ class ServiceModel extends ESModel {
   constructor(options) {
     super(options)
 
-    this.bind('save', this.fetchAWSResources)
-
     this.ec2Instances = new EC2ResourceCollection()
     this.rdsInstances = new RDSResourceCollection()
     this.elbInstances = new ELBResourceCollection()

@@ -19,7 +19,6 @@ export default View.extend({
       that.$services.find('.service').remove()
       var template = require('../templates/service_entry.hbs')
       that.services.each(function(service) {
-        service.fetchAWSResources()
         that.$services.append(template({ service: service.toJSON() }))
       })
     })
@@ -45,7 +44,10 @@ export default View.extend({
     var $this = $(e.target)
     this.$('.services .service').removeClass('active')
     $this.parent('li').addClass('active')
-    app.currentService = this.services.get($this.data('service-id'))
-    app.globalEvents.trigger('setService', app.currentService)
+
+    var service = this.services.get($this.data('service-id'))
+    app.currentService = service
+    app.globalEvents.trigger('setService', service)
+    service.fetchAWSResources()
   }
 })

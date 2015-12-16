@@ -123,6 +123,8 @@ module.exports = function(instanceType, metricName, duration, callback, errCallb
         }
       }
       break;
+    default:
+        console.log("wrong parameter")
   }
   app.es.search({
     index: 'metrics',

@@ -32,7 +32,7 @@ $(() => {
   new AppRouter()
 
   //querying initial data
-  logQuery('EC2', 'CPUUtilization', '6h', function(result) {
+  logQuery('EC2', 'CPUUtilization', '30m', function(result) {
     var chartData = conv2chartjs(result.label, result.value)
     app.metrics = new Metrics();
     for (var i = 0; i < 4; i++) {

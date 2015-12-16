@@ -12,8 +12,7 @@ module.exports = Backbone.View.extend({
   className: 'chartBox',
 
   events: {
-    'click .preset' : 'showPreset',
-    'click #range-submit' : 'getRange'
+    'click .range' : 'changeRange',
   },
 
   initialize: function() {
@@ -35,39 +34,26 @@ module.exports = Backbone.View.extend({
     var myLineChart = new Chart(ctx).Line(data)
   },
 
-  resetCanvas: function() {
+  getNewCtx: function() {
     this.$('.chart-container').remove()
     $('.chartBox').append("<canvas class='chart-container' width='600' height='600'></canvas>")
+    return this.$('.chart-container').get(0).getContext("2d")
   },
 
-  showPreset: function(evt) {
+  changeRange: function(evt) {
     evt.preventDefault()
 
-    this.resetCanvas()
     var newData
-    var ctx = this.$('.chart-container').get(0).getContext("2d")
+    var ctx = this.getNewCtx()
 
     getLog('EC2', 'CPUUtilization', String(evt.target.id), function(data) {
       var newData = conv(data.label, data.value)
       var myLineChart = new Chart(ctx).Line(newData)
     }, function(err) {
       console.log(err)
-    });
-  },
-
-  getRange: function(evt) {
-    evt.preventDefault()
-    this.resetCanvas()
-    var newData
-    var ctx = this.$('.chart-container').get(0).getContext("2d")
-
-    var dateFrom = new Date($('#dp-from').val())
-    var dateTo = new Date($('#dp-to').val())
-    getLog('EC2', 'CPUUtilization', 'custom', function(data) {
-      var newData = conv(data.label, data.value)
-      var myLineChart = new Chart(ctx).Line(newData)
-    }, function(err) {
-      console.log(err)
-    }, dateFrom, dateTo)
+    },
+    new Date($('#dp-from').val()),
+    new Date($('#dp-to').val())
+    );
   }
 })

@@ -13,6 +13,7 @@ export default View.extend({
     this.resourceViews = resources.map(function(resource) {
       var resourceView = new ResourceView({ resource: resource })
       that.$el.append(resourceView.render().$el)
+      return resourceView
     })
   }
 })

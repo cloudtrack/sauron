@@ -16,6 +16,8 @@ import Metrics from './models/metricCollection'
 import ServiceModel from './models/service'
 
 require('imports?jQuery=jquery!foundation-sites/js/foundation')
+import conv2chartjs from './data/chartjsDataConverter'
+import logQuery from './data/getLogs'
 
 $(() => {
   // Ensure ES indices exist
@@ -29,11 +31,16 @@ $(() => {
   // Backbone router
   new AppRouter()
 
-  // Initial data
-  app.metrics = new Metrics();
-  for (var i = 0; i < 4; i++) {
-  	app.metrics.push(new Metric({ id: i, title: i + "th chart" }))
-  }
+  //querying initial data
+  logQuery('EC2', 'CPUUtilization', '30m', function(result) {
+    var chartData = conv2chartjs(result.label, result.value)
+    app.metrics = new Metrics();
+    for (var i = 0; i < 4; i++) {
+      app.metrics.push(new Metric({ id: i, title: i + "th chart", data: chartData }))
+    }
+  }, function (err) {
+    console.log(err.message)
+  })
 
   Backbone.history.start()
 

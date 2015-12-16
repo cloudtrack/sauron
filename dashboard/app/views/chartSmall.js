@@ -17,6 +17,8 @@ module.exports = Backbone.View.extend({
   drawChart: function() {
     var ctx = this.$('.chart-container').get(0).getContext("2d")
     var data = this.model.get('data')
-    var myLineChart = new Chart(ctx).Line(data)
+    var myLineChart = new Chart(ctx).Line(data, {
+      showTooltips: false
+    })
   }
 })

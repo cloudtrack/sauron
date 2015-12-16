@@ -6,6 +6,7 @@ import ServiceModel from '../models/service'
 import ServiceCollection from '../models/serviceCollection'
 import NewServiceView from './newService'
 import _ from 'lodash'
+import $ from 'jquery'
 
 export default View.extend({
   initialize: function (options) {
@@ -18,14 +19,14 @@ export default View.extend({
       that.$services.find('.service').remove()
       var template = require('../templates/service_entry.hbs')
       that.services.each(function(service) {
-        service.fetchAWSResources()
         that.$services.append(template({ service: service.toJSON() }))
       })
     })
   },
 
   events: {
-    'click #open-new-service': 'openNewService'
+    'click #open-new-service': 'openNewService',
+    'click .services .service': 'setService'
   },
 
   openNewService: function () {
@@ -37,5 +38,16 @@ export default View.extend({
       }, 500)
     })
     newServiceView.open()
+  },
+
+  setService: function (e) {
+    var $this = $(e.target)
+    this.$('.services .service').removeClass('active')
+    $this.parent('li').addClass('active')
+
+    var service = this.services.get($this.data('service-id'))
+    app.currentService = service
+    app.globalEvents.trigger('setService', service)
+    service.fetchAWSResources()
   }
 })

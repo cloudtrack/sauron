@@ -11,18 +11,6 @@ class ServiceModel extends ESModel {
     this.ec2Instances = new EC2ResourceCollection()
     this.rdsInstances = new RDSResourceCollection()
     this.elbInstances = new ELBResourceCollection()
-
-    this.ec2Instances.bind('reset', function (instances) {
-      console.log(instances.map(function(i) { return i.id }))
-    })
-
-    this.rdsInstances.bind('reset', function (instances) {
-      console.log(instances.map(function(i) { return i.id }))
-    })
-
-    this.elbInstances.bind('reset', function (instances) {
-      console.log(instances.map(function(i) { return i.id }))
-    })
   }
 
   fetchAWSResources () {

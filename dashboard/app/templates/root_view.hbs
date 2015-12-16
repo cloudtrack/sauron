@@ -1,1 +1,32 @@
-<h1>Sauron is watching you.</h1>
+<div class="row">
+  <div class="large-12 columns">
+    {{#with service}}
+      <h1>Service: {{name}}</h1>
+      <hr />
+      <div class="row">
+        <div class="large-12 columns">
+          <h2>ELB Instances</h2>
+          <div class="elb-instances"></div>
+        </div>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="large-12 columns">
+          <h2>EC2 Instances</h2>
+          <div class="ec2-instances"></div>
+        </div>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="large-12 columns">
+          <h2>RDS Instances</h2>
+          <div class="rds-instances"></div>
+        </div>
+      </div>
+    {{else}}
+      <div class="welcome">
+        <h1>Sauron is watching you.</h1>
+      </div>
+    {{/with}}
+  </div>
+</div>

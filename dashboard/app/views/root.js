@@ -1,13 +1,33 @@
 import { View } from 'backbone'
+import app from '../app'
+import ResourcesView from './resources'
 
 export default class RootView extends View {
   constructor(options) {
     super(options)
     this.template = require('templates/root_view.hbs')
+    this.listenTo(app.globalEvents, 'setService', this.setService)
   }
 
   render() {
-    this.$el.html(this.template())
+    this.$el.html(this.template({
+      service: this.service && this.service.toJSON()
+    }))
+
+    if (this.service) {
+      this.elbResourcesView && this.elbResourcesView.remove()
+      this.ec2ResourcesView && this.ec2ResourcesView.remove()
+      this.rdsResourcesView && this.rdsResourcesView.remove()
+
+      this.elbResourcesView = new ResourcesView({ resources: this.service.elbInstances, el: this.$('.elb-instances') })
+      this.ec2ResourcesView = new ResourcesView({ resources: this.service.ec2Instances, el: this.$('.ec2-instances') })
+      this.rdsResourcesView = new ResourcesView({ resources: this.service.rdsInstances, el: this.$('.rds-instances') })
+    }
     return this
+  }
+
+  setService (service) {
+    this.service = service
+    this.render()
   }
 }

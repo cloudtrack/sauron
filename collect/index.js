@@ -21,42 +21,95 @@ var commonParams = {
   EndTime: new Date(),
   Period: 60
 };
+var paramsList = _.map(metricList, function(metricParams) {
+  return _.merge(metricParams, commonParams);
+});
 
 exports.handler = function(event, context) {
-  var paramsList = _.map(metricList, function(metricParams) {
-    return _.merge(metricParams, commonParams);
-  });
+  async.parallel({
+    ec2: fetchEC2Resources,
+    rds: fetchRDSResources,
+    elb: fetchELBResources
+  }, function (err, instances) {
+    var instancesWithType = []
 
-  async.series([
-    function (callback) {
-      async.each(paramsList,
-        function(params, callback) {
-          CloudWatch.getMetricStatistics(params, function(err, data) {
-            if (err)
-              console.log(err, err.stack);
-            else {
-              var actions = makeActions(params, data.Datapoints);
-              client.bulk({ body: actions }, function(err, resp) {
-                if (err)  console.log(err);
-                else      callback(null);
-              });
-            }
-        })},
-        function (err) { //when done
-          if (err)  console.log(err);
-          else      callback(null)
-      });
-    },
-    updateEC2Resources,
-    updateRDSResources,
-    updateELBResources
-  ],
-  function(err, results) {
-    context.succeed()
+    _.each(instances, function(instances, type) {
+      _.each(instances, function(instance) {
+        instancesWithType.push([instance, type])
+      })
+    })
+
+    async.each(instancesWithType, function(instanceWithType, callback) {
+      indexInstanceMetrics(instanceWithType, callback)
+    }, function (err) {
+      if (err) console.log(err);
+      else context.succeed();
+    })
   })
-};
+}
 
-function makeActions(params, datapoints) {
+function indexInstanceMetrics(instanceWithType, callback) {
+  var instanceParamList = filteredParamList(instanceWithType[1])
+  var dimensions = dimensionParams(instanceWithType[0], instanceWithType[1])
+  async.each(instanceParamList,
+    function(params, callback) {
+      params = _.merge(params, { Dimensions: dimensions })
+      CloudWatch.getMetricStatistics(params,
+        function(err, data) {
+          if (err) { return callback(err) }
+          var actions = makeActions(instanceWithType[0], params, data.Datapoints)
+          client.bulk({ body: actions }, function(err, resp) {
+            if (err)  console.log(err);
+            else      callback(null);
+          })
+        }
+      )
+    },
+    function(err) {
+      callback(err)
+    }
+  )
+}
+
+function dimensionParams(instance, type) {
+  var dimensionParams = []
+  switch(type) {
+    case 'ec2':
+      dimensionParams.push({ Name: 'InstanceId', Value: instance.InstanceId })
+      break
+    case 'rds':
+      dimensionParams.push({ Name: 'DBInstanceIdentifier', Value: instance.DBInstanceIdentifier})
+      break
+    case 'elb':
+      dimensionParams.push({ Name: 'LoadBalancerName', Value: instance.LoadBalancerName})
+      break
+  }
+
+  return dimensionParams
+}
+
+function instanceId(instance) {
+  return instance.InstanceId || instance.DBInstanceIdentifier || instance.LoadBalancerName
+}
+
+function filteredParamList(type) {
+  var namespace
+  switch(type) {
+    case 'ec2':
+      namespace = 'AWS/EC2'
+      break
+    case 'rds':
+      namespace = 'AWS/RDS'
+      break
+    case 'elb':
+      namespace = 'AWS/ELB'
+      break
+  }
+
+  return _.filter(paramsList, { Namespace: namespace })
+}
+
+function makeActions(instance, params, datapoints) {
   return _.reduceRight(datapoints, function(flattend, other) {
     return flattend.concat([
       {
@@ -68,14 +121,15 @@ function makeActions(params, datapoints) {
       {
         date: other.Timestamp,
         metric: params.MetricName,
-        value: other[params.Statistics[0]]
+        value: other[params.Statistics[0]],
+        instanceId: instanceId(instance)
       }
     ]);
   }, []);
 };
 
 function constructRDSInstanceARN(instance) {
-  return ['arn:aws:rds', process.env.AWS_REGION, 'ACCOUNT_ID:db', instance.DBInstanceIdentifier].join(':')
+  return ['arn:aws:rds', process.env.AWS_REGION, '841318228822:db', instance.DBInstanceIdentifier].join(':')
 }
 
 function upsertResourceQuery(instance, type) {
@@ -107,7 +161,7 @@ function upsertResourceQuery(instance, type) {
   ]
 }
 
-function updateEC2Resources(callback) {
+function fetchEC2Resources(callback) {
   EC2.describeInstances({}, function(err, data) {
     if (err) {
       console.log('Failed to fetch EC2 Instances')
@@ -117,16 +171,16 @@ function updateEC2Resources(callback) {
     var updates = _.flatten(_.map(instances, function (i) { return upsertResourceQuery(i, 'ec2') }))
     client.bulk({ body: updates }, function(err, resp) {
       if (err) { return callback(err) }
-      callback(null)
+      callback(null, instances)
     })
   })
 }
 
-function updateRDSResources(callback) {
+function fetchRDSResources(callback) {
   RDS.describeDBInstances({}, function(err, data) {
     if (err) {
       console.log('Failed to fetch RDS Instances')
-      return
+      return callback(err)
     }
 
     async.map(data.DBInstances, function(instance, callback) {
@@ -140,13 +194,13 @@ function updateRDSResources(callback) {
       var updates = _.flatten(_.map(instancesWithTags, function (i) { return upsertResourceQuery(i, 'rds') }))
       client.bulk({ body: updates }, function(err, resp) {
         if (err) { return callback(err) }
-        callback(null)
+        callback(null, instancesWithTags)
       })
     })
   })
 }
 
-function updateELBResources(callback) {
+function fetchELBResources(callback) {
   ELB.describeLoadBalancers({}, function(err, data) {
     if (err) {
       console.log('Failed to fetch ELB Instances')
@@ -162,7 +216,7 @@ function updateELBResources(callback) {
       var updates = _.flatten(_.map(instancesWithTags, function (i) { return upsertResourceQuery(i, 'elb') }))
       client.bulk({ body: updates }, function(err, resp) {
         if (err) { return callback(err) }
-        callback(null)
+        callback(null, instancesWithTags)
       })
     })
   })

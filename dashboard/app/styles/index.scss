@@ -1,8 +1,16 @@
+@import 'settings';
 @import 'foundation';
 @import 'foundation-datepicker';
 
 body {
   padding-top: $topbar-height;
+}
+
+.welcome {
+  padding-top: 30px;
+  text-align: center;
+  padding-bottom: 400px;
+  background: url('../images/sauron.png') no-repeat bottom center;
 }
 
 .chartBox {

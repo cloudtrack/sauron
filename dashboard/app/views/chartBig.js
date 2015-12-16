@@ -1,7 +1,6 @@
 import Backbone from 'backbone'
 import Chart from 'chart.js'
 import $ from 'jquery'
-// import jQuery from 'jquery'
 
 import getLog from '../data/getLogs'
 import conv from '../data/chartjsDataConverter'
@@ -13,7 +12,8 @@ module.exports = Backbone.View.extend({
   className: 'chartBox',
 
   events: {
-    'click .preset' : 'showPreset'
+    'click .preset' : 'showPreset',
+    'click #range-submit' : 'getRange'
   },
 
   initialize: function() {
@@ -26,7 +26,9 @@ module.exports = Backbone.View.extend({
 
   drawChart: function() {
     $('.dpf').fdatepicker({
-      format: 'mm-dd-yyyy',
+      format: 'yyyy-mm-dd hh:ii',
+      disableDblClickSelection: true,
+      pickTime: true
     })
     var ctx = this.$('.chart-container').get(0).getContext("2d")
     var data = this.model.get('data')
@@ -41,8 +43,8 @@ module.exports = Backbone.View.extend({
   showPreset: function(evt) {
     evt.preventDefault()
 
-    this.resetCanvas();
-    var newData;
+    this.resetCanvas()
+    var newData
     var ctx = this.$('.chart-container').get(0).getContext("2d")
 
     getLog('EC2', 'CPUUtilization', String(evt.target.id), function(data) {
@@ -51,5 +53,21 @@ module.exports = Backbone.View.extend({
     }, function(err) {
       console.log(err)
     });
+  },
+
+  getRange: function(evt) {
+    evt.preventDefault()
+    this.resetCanvas()
+    var newData
+    var ctx = this.$('.chart-container').get(0).getContext("2d")
+
+    var dateFrom = new Date($('#dp-from').val())
+    var dateTo = new Date($('#dp-to').val())
+    getLog('EC2', 'CPUUtilization', 'custom', function(data) {
+      var newData = conv(data.label, data.value)
+      var myLineChart = new Chart(ctx).Line(newData)
+    }, function(err) {
+      console.log(err)
+    }, dateFrom, dateTo)
   }
 })

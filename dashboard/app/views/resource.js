@@ -1,6 +1,8 @@
 import { View } from 'backbone'
 
 export default View.extend({
+  tagName: 'span',
+
   initialize: function (options) {
     this.resource = options.resource
   },

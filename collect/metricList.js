@@ -11,18 +11,18 @@ module.exports = [
   Statistics: ['Average'],
   Unit: 'Count'
 },
-// {
-//   Namespace: 'AWS/ELB',
-//   MetricName: 'RequestCount', // this metric has problem
-//   Statistics: ['Sum'],
-//   Unit: 'Count'
-// },
-// {
-//   Namespace: 'AWS/ELB',
-//   MetricName: 'Latency:', // this metric has problem
-//   Statistics: ['Average'],
-//   Unit: 'Seconds'
-// },
+{
+  Namespace: 'AWS/ELB',
+  MetricName: 'RequestCount', // this metric has problem
+  Statistics: ['Sum'],
+  Unit: 'Count'
+},
+{
+  Namespace: 'AWS/ELB',
+  MetricName: 'Latency:', // this metric has problem
+  Statistics: ['Average'],
+  Unit: 'Seconds'
+},
 {
   Namespace: 'AWS/RDS',
   MetricName: 'CPUUtilization',

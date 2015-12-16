@@ -18,6 +18,7 @@ export default View.extend({
       that.$services.find('.service').remove()
       var template = require('../templates/service_entry.hbs')
       that.services.each(function(service) {
+        service.fetchAWSResources()
         that.$services.append(template({ service: service.toJSON() }))
       })
     })

@@ -19,7 +19,7 @@ module.exports = [
 },
 {
   Namespace: 'AWS/ELB',
-  MetricName: 'Latency:', // this metric has problem
+  MetricName: 'Latency', // this metric has problem
   Statistics: ['Average'],
   Unit: 'Seconds'
 },

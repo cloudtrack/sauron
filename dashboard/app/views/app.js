@@ -6,6 +6,7 @@ import ServiceModel from '../models/service'
 import ServiceCollection from '../models/serviceCollection'
 import NewServiceView from './newService'
 import _ from 'lodash'
+import $ from 'jquery'
 
 export default View.extend({
   initialize: function (options) {
@@ -25,7 +26,8 @@ export default View.extend({
   },
 
   events: {
-    'click #open-new-service': 'openNewService'
+    'click #open-new-service': 'openNewService',
+    'click .services .service': 'setService'
   },
 
   openNewService: function () {
@@ -37,5 +39,13 @@ export default View.extend({
       }, 500)
     })
     newServiceView.open()
+  },
+
+  setService: function (e) {
+    var $this = $(e.target)
+    this.$('.services .service').removeClass('active')
+    $this.parent('li').addClass('active')
+    app.currentService = this.services.get($this.data('service-id'))
+    app.globalEvents.trigger('setService', app.currentService)
   }
 })

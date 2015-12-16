@@ -1,1 +1,9 @@
-<h1>Sauron is watching you.</h1>
+<div class="row">
+  <div class="large-12 columns">
+    {{#with service}}
+      <h1>Service: {{name}}</h1>
+    {{else}}
+      <h1>Sauron is watching you.</h1>
+    {{/with}}
+  </div>
+</div>

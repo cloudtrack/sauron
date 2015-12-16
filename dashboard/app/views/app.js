@@ -26,7 +26,8 @@ export default View.extend({
 
   events: {
     'click #open-new-service': 'openNewService',
-    'click .services .service': 'setService'
+    'click .services .service': 'setService',
+    'click .durations .duration': 'updateDuration'
   },
 
   openNewService: function () {
@@ -49,5 +50,12 @@ export default View.extend({
     app.currentService = service
     app.globalEvents.trigger('setService', service)
     service.fetchAWSResources()
+  },
+
+  updateDuration: function (e) {
+    var $this = $(e.target)
+    this.$('.durations .duration').addClass('secondary')
+    $this.removeClass('secondary')
+    app.globalEvents.trigger('updateDuration', $this.data('duration'))
   }
 })

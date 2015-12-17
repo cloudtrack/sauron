@@ -3,7 +3,7 @@ import MetricModel from '../models/metric'
 import Chart from 'chart.js'
 
 export default View.extend({
-  tagName: 'div',
+  tagName: 'li',
 
   initialize: function (options) {
     this.metricName = options.metricName

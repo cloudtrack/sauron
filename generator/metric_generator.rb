@@ -94,7 +94,7 @@ class MetricGenerator < Thor
               FactoryGirl.build(:metric, date: date, instanceId: elb[:LoadBalancerName], metric: metric)
             end
 
-            bulkBody = metrics.map { |metric| [{ index: { _index: 'metrics', _type: 'elb' } }, metric] }.flatten
+            bulkBody = metrics.map { |metric| [{ index: { _index: 'metrics', _type: 'ELB' } }, metric] }.flatten
             client.bulk(body: bulkBody)
           end
         end
@@ -112,7 +112,7 @@ class MetricGenerator < Thor
               FactoryGirl.build(:metric, date: date, instanceId: ec2[:InstanceId], metric: metric)
             end
 
-            bulkBody = metrics.map { |metric| [{ index: { _index: 'metrics', _type: 'ec2' } }, metric] }.flatten
+            bulkBody = metrics.map { |metric| [{ index: { _index: 'metrics', _type: 'EC2' } }, metric] }.flatten
             client.bulk(body: bulkBody)
           end
         end
@@ -130,7 +130,7 @@ class MetricGenerator < Thor
               FactoryGirl.build(:metric, date: date, instanceId: rds[:DbiResourceId], metric: metric)
             end
 
-            bulkBody = metrics.map { |metric| [{ index: { _index: 'metrics', _type: 'rds' } }, metric] }.flatten
+            bulkBody = metrics.map { |metric| [{ index: { _index: 'metrics', _type: 'RDS' } }, metric] }.flatten
             client.bulk(body: bulkBody)
           end
         end

@@ -30,6 +30,18 @@ module.exports = function(instanceType, metricName, duration, instanceId, callba
       var binString = "48m"
       break;
 
+    case('1w'):
+      var fromString = "now-1w"
+      var toString = "now"
+      var binString = "6h"
+      break;
+
+    case('1M'):
+      var fromString = "now-1M"
+      var toString = "now"
+      var binString = "1d"
+      break;
+
     case('custom'):
       var fromString = "now-" + Math.ceil((new Date().getTime() - dateFrom.getTime())/(60*1000)) + "m"
       var toString = "now-" + Math.ceil((new Date().getTime() - dateTo.getTime())/(60*1000)) + "m"

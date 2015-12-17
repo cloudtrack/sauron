@@ -30,7 +30,7 @@ export default View.extend({
   drawChart: function() {
     var ctx = this.newCtx()
     var data = this.model.get('data')
-    var myLineChart = new Chart(ctx).Line(data)
+    var myLineChart = new Chart(ctx).Line(data, { animation: false })
   },
 
   newCtx: function () {

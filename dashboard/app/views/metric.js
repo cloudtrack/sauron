@@ -38,6 +38,6 @@ export default View.extend({
   },
 
   updateChart: function(duration) {
-    this.model.fetch({ duration: duration })
+    this.model.set({ duration: duration })
   }
 })

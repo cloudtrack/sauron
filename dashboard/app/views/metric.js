@@ -13,11 +13,13 @@ export default View.extend({
     this.model.fetch()
     this.listenTo(this.model, 'loaded', this.drawChart)
     this.listenTo(app.globalEvents, 'updateDuration', this.updateChart)
+    this.listenTo(app.globalEvents, this.instanceType + ':showResource', this.showResource)
   },
 
   template: require('../templates/metric_view.hbs'),
 
   render: function () {
+    this.$el.empty()
     this.$el.html(this.template({
       metricName: this.metricName,
       instanceType: this.instanceType
@@ -39,5 +41,9 @@ export default View.extend({
 
   updateChart: function(duration) {
     this.model.set({ duration: duration })
+  },
+
+  showResource: function(resource) {
+    this.model.set({ instanceId: resource.id })
   }
 })

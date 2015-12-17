@@ -23,9 +23,9 @@ export default class RootView extends View {
       this.ec2MetricsView && this.ec2MetricsView.remove()
       this.rdsMetricsView && this.rdsMetricsView.remove()
 
-      this.elbResourcesView = new ResourcesView({ resources: this.service.elbInstances, el: this.$('.elb-instances') })
-      this.ec2ResourcesView = new ResourcesView({ resources: this.service.ec2Instances, el: this.$('.ec2-instances') })
-      this.rdsResourcesView = new ResourcesView({ resources: this.service.rdsInstances, el: this.$('.rds-instances') })
+      this.elbResourcesView = new ResourcesView({ type: 'ELB', resources: this.service.elbInstances, el: this.$('.elb-instances') })
+      this.ec2ResourcesView = new ResourcesView({ type: 'EC2', resources: this.service.ec2Instances, el: this.$('.ec2-instances') })
+      this.rdsResourcesView = new ResourcesView({ type: 'RDS', resources: this.service.rdsInstances, el: this.$('.rds-instances') })
       this.elbMetricsView = new MetricsView({ type: 'ELB', el: this.$('.elb-metrics') })
       this.ec2MetricsView = new MetricsView({ type: 'EC2', el: this.$('.ec2-metrics') })
       this.rdsMetricsView = new MetricsView({ type: 'RDS', el: this.$('.rds-metrics') })

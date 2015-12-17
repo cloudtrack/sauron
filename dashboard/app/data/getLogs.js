@@ -10,7 +10,7 @@ function bucket2LabelValue(histogramBuckets) {
   return result;
 }
 
-module.exports = function(instanceType, metricName, duration, callback, errCallback, dateFrom, dateTo) {
+module.exports = function(instanceType, metricName, duration, instanceId, callback, errCallback, dateFrom, dateTo) {
   switch(duration) {
     case('30m'):
       var fromString = "now-30m"
@@ -42,6 +42,18 @@ module.exports = function(instanceType, metricName, duration, callback, errCallb
       console.log("wrong parameter")
   }
 
+  var query = {
+    bool: {
+      must: [
+        { match: { metric: metricName } }
+      ]
+    }
+  }
+
+  if (instanceId) {
+    query.bool.must.push({ match: { instanceId: instanceId } })
+  }
+
   app.es.search({
     index: 'metrics',
     type: instanceType,
@@ -50,7 +62,7 @@ module.exports = function(instanceType, metricName, duration, callback, errCallb
       "size": 0,
       "query": {
           "filtered": {
-              "query": { "match": { "metric": metricName }},
+              "query": query,
               "filter": {
                   "range": {
                       "date" : {
@@ -78,7 +90,6 @@ module.exports = function(instanceType, metricName, duration, callback, errCallb
       }
     }
   }).then(function(resp) {
-    console.log(resp)
     var result = bucket2LabelValue(resp.aggregations.windowing.buckets)
     callback(result)
   }, function(err) {

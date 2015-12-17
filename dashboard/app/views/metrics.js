@@ -8,7 +8,7 @@ export default View.extend({
     this.type = options.type
     this.metricViews = _.map(this.metricNames(), function(metricName) {
       var metricView = new MetricView({ metricName: metricName, instanceType: that.type })
-      that.$el.append(metricView.render().$el)
+      that.$el.append(metricView.$el)
       return metricView
     })
   },

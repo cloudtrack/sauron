@@ -10,9 +10,10 @@ module.exports = Backbone.Model.extend({
     unit: "%"
   },
 
-  fetch: function() {
+  fetch: function(options) {
     var that = this
-    logQuery(this.get('instanceType'), this.get('metricName'), '6h', function(result) {
+    var duration = (options && options.duration) || '6h'
+    logQuery(this.get('instanceType'), this.get('metricName'), duration, function(result) {
       that.set('data', conv2chartjs(result.label, result.value))
       that.trigger('loaded')
     }, function (err) {

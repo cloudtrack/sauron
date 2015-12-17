@@ -31,17 +31,6 @@ $(() => {
   // Backbone router
   new AppRouter()
 
-  //querying initial data
-  logQuery('EC2', 'CPUUtilization', '30m', function(result) {
-    var chartData = conv2chartjs(result.label, result.value)
-    app.metrics = new Metrics();
-    for (var i = 0; i < 4; i++) {
-      app.metrics.push(new Metric({ id: i, title: i + "th chart", data: chartData }))
-    }
-  }, function (err) {
-    console.log(err.message)
-  })
-
   Backbone.history.start()
 
   $(document).foundation()

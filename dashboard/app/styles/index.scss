@@ -6,11 +6,22 @@ body {
   padding-top: $topbar-height;
 }
 
+#main-container {
+  padding-top: 10px;
+}
+
 .welcome {
   padding-top: 30px;
   text-align: center;
   padding-bottom: 400px;
   background: url('../images/sauron.png') no-repeat bottom center;
+}
+
+.service-logo {
+  width: rem-calc(30px);
+  height: rem-calc(30px);
+  vertical-align: text-top;
+  margin-right: rem-calc(10px);
 }
 
 .chartBox {

@@ -1,26 +1,41 @@
 <div class="row">
   <div class="large-12 columns">
     {{#with service}}
-      <h1>Service: {{name}}</h1>
+      <h1 class="left">Service: {{name}}</h1>
+      <div class="right">
+        <label>Change Duration</label>
+        <ul class="durations button-group">
+          <li><a href="#" class="button duration tiny secondary" data-duration="30m">30m</a></li>
+          <li><a href="#" class="button duration tiny secondary" data-duration="6h">6hrs</a></li>
+          <li><a href="#" class="button duration tiny secondary" data-duration="1d">1day</a></li>
+        </ul>
+      </div>
+      <div class="row">
+        <div class="large-12 columns">
+        </div>
+      </div>
       <hr />
       <div class="row">
         <div class="large-12 columns">
-          <h2>ELB Instances</h2>
+          <h2><img class="service-logo" alt="ELB" src="../images/AmazonELB.png">ELB Instances</h2>
           <div class="elb-instances"></div>
+          <ul class="elb-metrics medium-block-grid-2"></ul>
         </div>
       </div>
       <hr />
       <div class="row">
         <div class="large-12 columns">
-          <h2>EC2 Instances</h2>
+          <h2><img class="service-logo" alt="EC2" src="../images/AmazonEC2.png">EC2 Instances</h2>
           <div class="ec2-instances"></div>
+          <ul class="ec2-metrics medium-block-grid-2"></ul>
         </div>
       </div>
       <hr />
       <div class="row">
         <div class="large-12 columns">
-          <h2>RDS Instances</h2>
+          <h2><img class="service-logo" alt="RDS" src="../images/AmazonRDS.png">RDS Instances</h2>
           <div class="rds-instances"></div>
+          <ul class="rds-metrics medium-block-grid-2"></ul>
         </div>
       </div>
     {{else}}

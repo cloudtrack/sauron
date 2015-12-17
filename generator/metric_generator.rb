@@ -3,6 +3,7 @@ require 'thor'
 require 'factory_girl'
 require 'elasticsearch'
 require 'active_support/all'
+require 'thread'
 
 FactoryGirl.define do
   factory :service, class: Hash do
@@ -79,53 +80,65 @@ class MetricGenerator < Thor
     ec2_metrics = ['CPUUtilization', 'DiskReadBytes', 'DiskReadOps', 'DiskWriteBytes', 'DiskWriteOps', 'NetworkIn', 'NetworkOut']
     rds_metrics = ['CPUUtilization', 'FreeableMemory', 'ReadThroughput', 'WriteThroughput', 'SwapUsage']
 
-    from = options[:from] || (Time.now - 2.month).to_i
+    from = options[:from] || (Time.now - 1.hour).to_i
     to = Time.now.to_i
 
-    puts 'Genererating ELB Metrics'
-    elbs.each do |elb|
-      elb_metrics.each do |metric|
-        (from..to).step(1.day) do |timestamp|
-          metrics = (timestamp..(timestamp + 1.day - 1)).step(1.minute).to_a.map do |timestamp|
-            date = Time.at(timestamp).to_datetime.utc.to_s
-            FactoryGirl.build(:metric, date: date, instanceId: elb[:LoadBalancerName], metric: metric)
-          end
+    threads = []
+    threads << Thread.new {
+      puts 'Genererating ELB Metrics'
+      elbs.each do |elb|
+        elb_metrics.each do |metric|
+          (from..to).step(1.day) do |timestamp|
+            metrics = (timestamp..(timestamp + 1.day - 1)).step(1.minute).to_a.map do |timestamp|
+              date = Time.at(timestamp).to_datetime.utc.to_s
+              FactoryGirl.build(:metric, date: date, instanceId: elb[:LoadBalancerName], metric: metric)
+            end
 
-          bulkBody = metrics.map { |metric| [{ index: { _index: 'metrics', _type: 'elb' } }, metric] }.flatten
-          client.bulk(body: bulkBody)
+            bulkBody = metrics.map { |metric| [{ index: { _index: 'metrics', _type: 'elb' } }, metric] }.flatten
+            client.bulk(body: bulkBody)
+          end
         end
       end
-    end
+      Thread::exit()
+    }
 
-    puts 'Genererating EC2 Metrics'
-    ec2s.each do |ec2|
-      ec2_metrics.each do |metric|
-        (from..to).step(1.day) do |timestamp|
-          metrics = (timestamp..(timestamp + 1.day - 1)).step(1.minute).to_a.map do |timestamp|
-            date = Time.at(timestamp).to_datetime.utc.to_s
-            FactoryGirl.build(:metric, date: date, instanceId: ec2[:InstanceId], metric: metric)
+    threads << Thread.new {
+      puts 'Genererating EC2 Metrics'
+      ec2s.each do |ec2|
+        ec2_metrics.each do |metric|
+          (from..to).step(1.day) do |timestamp|
+            metrics = (timestamp..(timestamp + 1.day - 1)).step(1.minute).to_a.map do |timestamp|
+              date = Time.at(timestamp).to_datetime.utc.to_s
+              FactoryGirl.build(:metric, date: date, instanceId: ec2[:InstanceId], metric: metric)
+            end
+
+            bulkBody = metrics.map { |metric| [{ index: { _index: 'metrics', _type: 'ec2' } }, metric] }.flatten
+            client.bulk(body: bulkBody)
           end
-
-          bulkBody = metrics.map { |metric| [{ index: { _index: 'metrics', _type: 'ec2' } }, metric] }.flatten
-          client.bulk(body: bulkBody)
         end
       end
-    end
+      Thread::exit()
+    }
 
-    puts 'Genererating RDS Metrics'
-    rdss.each do |rds|
-      rds_metrics.each do |metric|
-        (from..to).step(1.day) do |timestamp|
-          metrics = (timestamp..(timestamp + 1.day - 1)).step(1.minute).to_a.map do |timestamp|
-            date = Time.at(timestamp).to_datetime.utc.to_s
-            FactoryGirl.build(:metric, date: date, instanceId: rds[:DbiResourceId], metric: metric)
+    threads << Thread.new {
+      puts 'Genererating RDS Metrics'
+      rdss.each do |rds|
+        rds_metrics.each do |metric|
+          (from..to).step(1.day) do |timestamp|
+            metrics = (timestamp..(timestamp + 1.day - 1)).step(1.minute).to_a.map do |timestamp|
+              date = Time.at(timestamp).to_datetime.utc.to_s
+              FactoryGirl.build(:metric, date: date, instanceId: rds[:DbiResourceId], metric: metric)
+            end
+
+            bulkBody = metrics.map { |metric| [{ index: { _index: 'metrics', _type: 'rds' } }, metric] }.flatten
+            client.bulk(body: bulkBody)
           end
-
-          bulkBody = metrics.map { |metric| [{ index: { _index: 'metrics', _type: 'rds' } }, metric] }.flatten
-          client.bulk(body: bulkBody)
         end
       end
-    end
+      Thread::exit()
+    }
+
+    threads.each(&:join)
   end
 end
 

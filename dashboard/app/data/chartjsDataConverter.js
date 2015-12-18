@@ -1,8 +1,10 @@
 import _ from 'lodash'
 
-function convertToChartjsData(labels, datas) {
+function convertToChartjsData(labels, datas, duration) {
   var chartjsData = {}
   chartjsData.labels = _.map(labels, function(item) {
+    if (duration === '1M' || duration ==='1w')
+      return new Date(item).toString().slice(4,10)
     return new Date(item).toTimeString().slice(0, 5)
   })
   chartjsData.datasets = [{

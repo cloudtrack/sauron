@@ -1,5 +1,7 @@
 #Sauron: The Severless Dashboard for tagged AWS resource groups
-Sauron is the serverless open source dashboard of monitoring for tagged groups of AWS resources. You can watch your server groups as like web, databases and api instances tagged. System metrics for monitoring are gathered by AWS Lambda functions via Amazon Cloudwatch and it delievers to Amazon Elasticsearch services(ES). This dashboard is based on a Node JS application to show metrics via Elasticsearch APIs from Amazon ES. 
+Sauron is the serverless open source dashboard of monitoring for tagged groups of AWS resources. You can watch your server groups as like web, databases and api instances tagged. System metrics for monitoring are gathered by AWS Lambda functions via Amazon Cloudwatch and it delievers to Amazon Elasticsearch services(ES). This dashboard is based on a Node JS application to show metrics via Elasticsearch APIs from Amazon ES.
+
+![Intro of Sauron](./docs/the_intro_sauron.png)
 
 ##Why it needs?
 If you want to monitor each server stacks as like web servers, application servers and database servers, you have to make new dashboard with associated instances via low level APIs of Amazon CloudWatch. It offers serverless simple dashboard only using AWS managed services including Amazon CloudWatch, AWS Lambda and Amazon ES. 

@@ -5,7 +5,7 @@ Sauron is the serverless open source dashboard of monitoring for tagged groups o
 If you want to monitor each server stacks as like web servers, application servers and database servers, you have to make new dashboard with associated instances via low level APIs of Amazon CloudWatch. It offers serverless simple dashboard only using AWS managed services including Amazon CloudWatch, AWS Lambda and Amazon ES. 
 
 ##Architecture 
-
+![Architecure of Sauron](./docs/the_architecture_sauron.png)
 * Collect: AWS Lambda gets CloudWatch metrics periodically using cron features in every 5 miniutes. The dashboard is now supporting some metrics of EC2 instances, Amazon RDS instances and Elastic Load Balancing. It will be increased supported AWS services soon. 
  * Elastic Load Balancing: HealthyHostCount, UnHealthyHostCount, RequestCount, Latency
  * EC2: CPUUtilization, NetworkIn, NetworkOut

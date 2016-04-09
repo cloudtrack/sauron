@@ -8,3 +8,5 @@ gem 'elasticsearch-api'
 
 gem 'activesupport'
 gem 'factory_girl'
+
+gem 'aws-sdk'

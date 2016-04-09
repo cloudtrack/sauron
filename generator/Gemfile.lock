@@ -7,6 +7,12 @@ GEM
       minitest (~> 5.1)
       thread_safe (~> 0.3, >= 0.3.4)
       tzinfo (~> 1.1)
+    aws-sdk (2.3.1)
+      aws-sdk-resources (= 2.3.1)
+    aws-sdk-core (2.3.1)
+      jmespath (~> 1.0)
+    aws-sdk-resources (2.3.1)
+      aws-sdk-core (= 2.3.1)
     elasticsearch (1.0.8)
       elasticsearch-api (= 1.0.7)
       elasticsearch-transport (= 1.0.7)
@@ -20,7 +26,10 @@ GEM
     faraday (0.9.1)
       multipart-post (>= 1.2, < 3)
     i18n (0.7.0)
+    jmespath (1.2.4)
+      json_pure (>= 1.8.1)
     json (1.8.3)
+    json_pure (1.8.3)
     minitest (5.6.1)
     multi_json (1.11.0)
     multipart-post (2.0.0)
@@ -34,6 +43,7 @@ PLATFORMS
 
 DEPENDENCIES
   activesupport
+  aws-sdk
   elasticsearch
   elasticsearch-api
   factory_girl

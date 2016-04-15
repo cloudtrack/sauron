@@ -24,6 +24,20 @@ class SauronTester < Thor
 
     puts "create instances"
     reservation = ec2.run_instances(ec2_options)
+
+    puts "waiting instances to wake up"
+    while true
+      puts "waiting..."
+      all_running = ec2_instances(reservation.reservation_id).inject(true) do |bool, instance|
+        bool &&= instance_is_running?(instance)
+      end
+
+      break if all_running
+
+      sleep(10)
+    end
+    puts "all instance is now running"
+
     puts "script end"
   end
 

@@ -8,6 +8,8 @@ require 'aws-sdk'
 require 'net/ssh'
 require 'pry'
 
+AMI_ID = "ami-a21529cc"
+
 class SauronTester < Thor
   desc 'generate --options', 'Generate example metrics for testing dashboard performance'
   option :elasticsearch_url, type: :string
@@ -56,6 +58,7 @@ class SauronTester < Thor
   def ec2_options
     {
       dry_run: false,
+      image_id: AMI_ID, # required
       min_count: 1, # required
       max_count: 1, # required
       instance_type: "t2.micro",

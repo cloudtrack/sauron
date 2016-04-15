@@ -9,6 +9,9 @@ require 'net/ssh'
 require 'pry'
 
 AMI_ID = "ami-a21529cc"
+JOB_TYPE_CPU = "JOB_TYPE_CPU"
+JOB_TYPE_DISK = "JOB_TYPE_DISK"
+JOB_TYPE_NETWORK = "JOB_TYPE_NETWORK"
 
 class SauronTester < Thor
   desc 'generate --options', 'Generate example metrics for testing dashboard performance'

@@ -64,6 +64,9 @@ class SauronTester < Thor
       min_count: 1, # required
       max_count: 1, # required
       instance_type: "t2.micro",
+      monitoring: {
+        enabled: true, # required
+      },
     }
   end
 

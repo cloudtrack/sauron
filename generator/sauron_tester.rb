@@ -58,6 +58,8 @@ class SauronTester < Thor
   def ec2_options
     {
       dry_run: false,
+      key_name: "sauron",
+      security_groups: ["default"],
       image_id: AMI_ID, # required
       min_count: 1, # required
       max_count: 1, # required

@@ -41,6 +41,14 @@ class SauronTester < Thor
     puts "wait instance run ssh daemon"
     sleep(60)
 
+    puts "generate cpu metrics"
+    ssh_job(ec2_instances(reservation.reservation_id), JOB_TYPE_CPU)
+
+    puts "generate disk metrics"
+    ssh_job(ec2_instances(reservation.reservation_id), JOB_TYPE_DISK)
+
+    puts "generate network metrics"
+    ssh_job(ec2_instances(reservation.reservation_id), JOB_TYPE_NETWORK)
 
     # puts "generating end. shutting down"
     # shut_down
@@ -106,6 +114,24 @@ class SauronTester < Thor
   end
 
   def ssh_job(instances, job_type)
+    threads = []
+    instances.each do |instance|
+      threads << Thread.new do
+        puts "run #{job_type} in #{instance.instance_id}"
+        Net::SSH.start(instance.public_dns_name, "ubuntu", :keys => "/Users/yujun/.ssh/sauron.pem" ) do |ssh|
+          if job_type == JOB_TYPE_CPU
+            ssh.exec!("source ~/.bash_profile ; ruby cpu.rb")
+          elsif job_type == JOB_TYPE_DISK
+            ssh.exec!("source ~/.bash_profile ; ruby disk.rb")
+          elsif job_type == JOB_TYPE_NETWORK
+            ssh.exec!("source ~/.bash_profile ; ruby network.rb")
+          end
+        end
+        Thread::exit()
+      end
+    end
+
+    threads.each(&:join)
   end
 end
 

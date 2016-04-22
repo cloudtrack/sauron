@@ -38,6 +38,12 @@ class SauronTester < Thor
     end
     puts "all instance is now running"
 
+    puts "wait instance run ssh daemon"
+    sleep(60)
+
+
+    # puts "generating end. shutting down"
+    # shut_down
     puts "script end"
   end
 

@@ -41,6 +41,18 @@ class SauronTester < Thor
     puts "script end"
   end
 
+  desc 'shut_down --options', 'Shut down instances'
+  def shut_down
+    apply_config
+    puts "start shut down"
+    instance_ids = current_ec2_instances.map(&:instance_id)
+    ec2.terminate_instances({
+      dry_run: false,
+      instance_ids: instance_ids
+    })
+    puts "shut down end"
+  end
+
   private
 
   def apply_config

@@ -9,7 +9,7 @@ require 'net/ssh'
 require 'net/http'
 require 'pry'
 
-AMI_ID = "ami-a21529cc"
+AMI_ID = "ami-16a34d77"
 
 class SauronTester < Thor
   desc 'generate --options', 'Generate example metrics for testing dashboard performance'
@@ -39,6 +39,12 @@ class SauronTester < Thor
 
     puts "deploy sauron test"
     `cd sauron_test; AWS_ACCESS_KEY_ID=#{ENV["AWS_ACCESS_KEY_ID"]} AWS_SECRET_ACCESS_KEY=#{ENV["AWS_SECRET_ACCESS_KEY"]} cap production deploy`
+
+    puts "append elb"
+    elb.register_instances_with_load_balancer({
+      load_balancer_name: "sauron-test",
+      instances: ec2_instances(reservation.reservation_id).map{|x| {instance_id: x.instance_id}}
+    })
 
     puts "script end"
   end

@@ -49,6 +49,20 @@ class SauronTester < Thor
     puts "script end"
   end
 
+  desc 'deploy --options', 'deploy'
+  def deploy
+    apply_config
+
+    `cd sauron_test; AWS_ACCESS_KEY_ID=#{ENV["AWS_ACCESS_KEY_ID"]} AWS_SECRET_ACCESS_KEY=#{ENV["AWS_SECRET_ACCESS_KEY"]} cap production deploy`
+
+    elb.register_instances_with_load_balancer({
+      load_balancer_name: "sauron-test",
+      instances: current_ec2_instances.map{|x| {instance_id: x.instance_id}}
+    })
+
+    puts "script end"
+  end
+
   desc 'shut_down --options', 'Shut down instances'
   def shut_down
     apply_config

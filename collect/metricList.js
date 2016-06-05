@@ -94,5 +94,53 @@ module.exports = [
   MetricName: 'NetworkOut',
   Statistics: ['Average'],
   Unit: 'Bytes'
+},
+{
+  Namespace: 'AWS/Lambda',
+  MetricName: 'Invocations',
+  Statistics: ['Average'],
+  Unit: 'Count'
+},
+{
+  Namespace: 'AWS/Lambda',
+  MetricName: 'Errors',
+  Statistics: ['Average'],
+  Unit: 'Count'
+},
+{
+  Namespace: 'AWS/Lambda',
+  MetricName: 'Duration',
+  Statistics: ['Average'],
+  Unit: 'Milliseconds'
+},
+{
+  Namespace: 'AWS/Lambda',
+  MetricName: 'Throttles',
+  Statistics: ['Average'],
+  Unit: 'Count'
+},
+{
+  Namespace: 'AWS/ES',
+  MetricName: 'Nodes',
+  Statistics: ['Average'],
+  Unit: 'Count'
+},
+{
+  Namespace: 'AWS/ES',
+  MetricName: 'ReadLatency',
+  Statistics: ['Average'],
+  Unit: 'Seconds'
+},
+{
+  Namespace: 'AWS/ES',
+  MetricName: 'WriteLatency',
+  Statistics: ['Average'],
+  Unit: 'Seconds'
+},
+{
+  Namespace: 'AWS/ES',
+  MetricName: 'FreeStorageSpace',
+  Statistics: ['Minimum'],
+  Unit: 'Megabytes'
 }
 ];

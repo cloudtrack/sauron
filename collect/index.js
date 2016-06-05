@@ -9,7 +9,9 @@ var EC2 = new aws.EC2();
 var RDS = new aws.RDS();
 var ELB = new aws.ELB();
 var CloudWatch = new aws.CloudWatch({apiVersion: '2010-08-01'});
+var AWS_ES = new aws.ES({apiVersion: '2015-01-01'});
 
+// for Elasticsearch Kibana
 var ES = require('elasticsearch');
 var client = new ES.Client({
   host: 'search-sauron-xjk7ro2fmqho5oiwdktffm4cca.ap-northeast-1.es.amazonaws.com'
@@ -30,7 +32,8 @@ exports.handler = function(event, context) {
     ec2: fetchEC2Resources,
     rds: fetchRDSResources,
     elb: fetchELBResources,
-    lambda: fetchLambdaResources
+    lambda: fetchLambdaResources,
+    es:fetchESResources
   }, function (err, instances) {
     var instancesWithType = []
 
@@ -89,6 +92,9 @@ function dimensionParams(instance, type) {
     case 'lambda:
       dimensionParams.push({ Name: 'FunctionName', Value: instance.FunctionName})
       break
+    case 'es':
+      dimensionParams.push({ Name: 'DomainName', Value: instance.DomainName })
+      break
   }
 
   return dimensionParams
@@ -112,6 +118,9 @@ function filteredParamList(type) {
       break
     case 'lambda':
       namespace: 'AWS/Lambda'
+      break
+    case 'es':
+      namespace = 'AWS/ES'
       break
   }
 
@@ -157,6 +166,10 @@ function upsertResourceQuery(instance, type) {
     case 'lambda':
       _id = instance.FunctionName
       break
+    case 'es':
+      _id = instance.DomainName
+      break
+
   }
 
   return [
@@ -254,5 +267,22 @@ function fetchLambdaResources(callback) {
       if (err) { return callback(err) }
       callback(null, functions)
     })
+  });
+}
+
+function fetchESResources(callback) {
+  AWS_ES.listDomainNames({}, function(err, data) {
+
+    var names = data.DomainNames;
+    AWS_ES.describeElasticsearchDomains({
+      DomainNames: _.pluck(names, 'DomainName')
+    }, function(err, data) {
+      var statusList = data.DomainStatusList;
+      var updates = _.flatten(_.map(statusList, function (i) { return upsertResourceQuery(i, 'es')}));
+      client.bulk({ body: updates }, function(err, resp) {
+        if (err) { return callback(err) }
+        callback(null, statusList)
+      });
+    });
   });
 }

@@ -12,7 +12,7 @@ var CloudWatch = new aws.CloudWatch({apiVersion: '2010-08-01'});
 
 var ES = require('elasticsearch');
 var client = new ES.Client({
-  host: 'https://search-sauron-j75hyivu5hfn4sayixpwx6gmru.ap-northeast-1.es.amazonaws.com'
+  host: 'search-sauron-xjk7ro2fmqho5oiwdktffm4cca.ap-northeast-1.es.amazonaws.com'
 });
 
 var metricList = require('./metricList.js');
@@ -29,7 +29,8 @@ exports.handler = function(event, context) {
   async.parallel({
     ec2: fetchEC2Resources,
     rds: fetchRDSResources,
-    elb: fetchELBResources
+    elb: fetchELBResources,
+    lambda: fetchLambdaResources
   }, function (err, instances) {
     var instancesWithType = []
 
@@ -57,11 +58,13 @@ function indexInstanceMetrics(instanceWithType, callback) {
       CloudWatch.getMetricStatistics(params,
         function(err, data) {
           if (err) { return callback(err) }
-          var actions = makeActions(instanceWithType[0], params, data.Datapoints)
-          client.bulk({ body: actions }, function(err, resp) {
-            if (err)  console.log(err);
-            else      callback(null);
-          })
+          if (data.Datapoints.length != 0) {
+            var actions = makeActions(instanceWithType[0], params, data.Datapoints)
+            client.bulk({ body: actions }, function(err, resp) {
+              if (err)  console.log(err);
+              else      callback(null);
+            })
+          }
         }
       )
     },
@@ -83,13 +86,16 @@ function dimensionParams(instance, type) {
     case 'elb':
       dimensionParams.push({ Name: 'LoadBalancerName', Value: instance.LoadBalancerName})
       break
+    case 'lambda:
+      dimensionParams.push({ Name: 'FunctionName', Value: instance.FunctionName})
+      break
   }
 
   return dimensionParams
 }
 
 function instanceId(instance) {
-  return instance.InstanceId || instance.DBInstanceIdentifier || instance.LoadBalancerName
+  return instance.InstanceId || instance.DBInstanceIdentifier || instance.LoadBalancerName || instance.FunctionName
 }
 
 function filteredParamList(type) {
@@ -103,6 +109,9 @@ function filteredParamList(type) {
       break
     case 'elb':
       namespace = 'AWS/ELB'
+      break
+    case 'lambda':
+      namespace: 'AWS/Lambda'
       break
   }
 
@@ -144,6 +153,9 @@ function upsertResourceQuery(instance, type) {
       break
     case 'elb':
       _id = instance.LoadBalancerName
+      break
+    case 'lambda':
+      _id = instance.FunctionName
       break
   }
 
@@ -227,4 +239,20 @@ function fetchELBResources(callback) {
       })
     })
   })
+}
+
+function fetchLambdaResources(callback) {
+  Lambda.listFunctions({}, function(err, data) {
+    if (err) {
+      console.log('Failed to fetch Lambda Instances', err);
+      return;
+    }
+
+    var functions = data.Functions
+    var updates = _.flatten(_.map(functions, function (i) { return upsertResourceQuery(i, 'lambda') }))
+    client.bulk({ body: updates }, function(err, resp) {
+      if (err) { return callback(err) }
+      callback(null, functions)
+    })
+  });
 }

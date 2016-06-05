@@ -94,6 +94,7 @@ function dimensionParams(instance, type) {
       break
     case 'es':
       dimensionParams.push({ Name: 'DomainName', Value: instance.DomainName })
+      //dimensionParams.push({ Name: 'ClientId', Value: 'YourClientId' })
       break
   }
 

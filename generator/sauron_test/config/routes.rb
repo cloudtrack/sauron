@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   get 'cpu' => 'home#cpu'
   get 'disk' => 'home#disk'
   get 'network' => 'home#network'
+  get 'database' => 'home#database'
 
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".

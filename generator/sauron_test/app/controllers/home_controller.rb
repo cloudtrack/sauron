@@ -37,4 +37,12 @@ class HomeController < ApplicationController
 
     head :ok
   end
+
+  def database
+    Timeout.timeout(2) do
+      TestMode.create(test_string: SecureRandom.hex.first(10), test_integer: rand(1000000))
+    end
+
+    head :ok
+  end
 end

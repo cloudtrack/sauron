@@ -53,7 +53,7 @@ class MetricGenerator < Thor
   option :from, type: :numeric
   option :elasticsearch_url, type: :string
   def generate(serviceName)
-    client = Elasticsearch::Client.new(url: options[:elasticsearch_url] || 'http://localhost:9200')
+    client = Elasticsearch::Client.new(url: options[:elasticsearch_url] || 'http://search-sauron-xjk7ro2fmqho5oiwdktffm4cca.ap-northeast-1.es.amazonaws.com')
 
     service = FactoryGirl.build(:service, name: serviceName)
 

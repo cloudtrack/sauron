@@ -51,14 +51,14 @@ end
 
 # you have to change this ssh options
 set :ssh_options, {
-  keys: %w(/Users/yujun/.ssh/sauron_tokyo.pem),
   forward_agent: true,
-  auth_methods: %w(publickey)
+  auth_methods: %w(password),
+  password: 'saurontest'
 }
 
 namespace :deploy do
 
-  before :starting, :add_database do
+  before :check, :add_database do
     on roles(:all) do
       db_config = <<-EOF
         development:
@@ -81,6 +81,10 @@ namespace :deploy do
           collation: utf8mb4_bin
       EOF
 
+      puts shared_path
+      within shared_path do
+        execute(:mkdir, "config") rescue nil
+      end
       upload! StringIO.new(db_config), "#{shared_path}/config/database.yml"
     end
   end

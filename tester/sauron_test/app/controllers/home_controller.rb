@@ -9,7 +9,7 @@ class HomeController < ApplicationController
     Timeout.timeout(5) do
       a = 1
       a += 1 while true
-    end
+    end rescue nil
 
     head :ok
   end
@@ -23,7 +23,7 @@ class HomeController < ApplicationController
         f.write(str)
         f.close
       end
-    end
+    end rescue nil
 
     head :ok
   end
@@ -33,15 +33,15 @@ class HomeController < ApplicationController
       while true
         open("https://images.unsplash.com/photo-1464013778555-8e723c2f01f8?fm=png")
       end
-    end
+    end rescue nil
 
     head :ok
   end
 
   def database
     Timeout.timeout(2) do
-      TestMode.create(test_string: SecureRandom.hex.first(10), test_integer: rand(1000000))
-    end
+      TestModel.create(test_string: SecureRandom.hex.first(10), test_integer: rand(1000000))
+    end rescue nil
 
     head :ok
   end

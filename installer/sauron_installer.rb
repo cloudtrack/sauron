@@ -127,7 +127,7 @@ class SauronInstaller < Thor
 
   def compress_collector
     puts "start compress_collector"
-    `zip -r ../collector.zip ../collector/*`
+    `cd ../collector ; zip -r ../collector.zip *`
 
     puts "end compress_collector"
   end

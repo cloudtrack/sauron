@@ -117,7 +117,7 @@ class SauronInstaller < Thor
   def add_config_to_collector
     puts "start add_config_to_collector"
 
-    collector_config = config.slice("client_id", "region", "services", "elasticsearch_domain")
+    collector_config = config.slice("client_id", "access_key_id", "secret_access_key", "region", "services", "elasticsearch_domain")
     f = File.new("../collector/config.yml", "w")
     f.write(collector_config.to_yaml)
     f.close

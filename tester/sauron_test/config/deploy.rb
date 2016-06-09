@@ -2,9 +2,8 @@
 lock '3.5.0'
 
 set :application, 'test_app'
-set :repo_url, 'https://github.com/yujunkim/sauron_test.git'
-# set :repo_url, 'git@github.com:cloudtrack/sauron.git'
-# set :repo_tree, 'generator/test_app'
+set :repo_url, 'git@github.com:cloudtrack/sauron.git'
+set :repo_tree, 'tester/sauron_test'
 
 # Default branch is :master
 # ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp

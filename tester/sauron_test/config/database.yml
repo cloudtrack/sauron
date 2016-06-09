@@ -13,6 +13,6 @@ production:
   encoding: utf8
   username: root
   password: saurontest
-  host: sauron-test-app-prod.c283n6dl28pf.ap-northeast-1.rds.amazonaws.com
+  host: <%= ENV["DATABASE_HOST"] %>
   encoding: utf8mb4
   collation: utf8mb4_bin

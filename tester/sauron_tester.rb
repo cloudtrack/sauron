@@ -1,58 +1,51 @@
-require 'json'
 require 'thor'
-require 'factory_girl'
-require 'elasticsearch'
-require 'active_support/all'
-require 'thread'
+require 'yaml'
 require 'aws-sdk'
+require 'active_support/all'
+
+require 'thread'
 require 'net/ssh'
+require 'net/http'
 require 'pry'
 
-AMI_ID = "ami-a21529cc"
-JOB_TYPE_CPU = "JOB_TYPE_CPU"
-JOB_TYPE_DISK = "JOB_TYPE_DISK"
-JOB_TYPE_NETWORK = "JOB_TYPE_NETWORK"
+AMI_ID = "ami-16a34d77"
+TEST_RDS_IDENTIFIER = "sauron-test"
+TEST_ELB_NAME = "sauron-test"
 
 class SauronTester < Thor
-  desc 'generate --options', 'Generate example metrics for testing dashboard performance'
-  option :elasticsearch_url, type: :string
-  option :aws_access_key_id, type: :string
-  option :aws_secret_access_key, type: :string
-
-  def generate
+  desc 'run_test --options', 'run tester'
+  def run_test
     apply_config
 
-    puts "create instances"
-    reservation = ec2.run_instances(ec2_options)
+    create_ec2_instances
 
-    puts "waiting instances to wake up"
-    while true
-      puts "waiting..."
-      all_running = ec2_instances(reservation.reservation_id).inject(true) do |bool, instance|
-        bool &&= instance_is_running?(instance)
-      end
+    create_rds_instances
 
-      break if all_running
+    wait_ec2_rds_instances
 
-      sleep(10)
-    end
-    puts "all instance is now running"
+    deploy_sauron_test_rails_app
 
-    puts "wait instance run ssh daemon"
-    sleep(60)
+    attach_ec2_instances_to_elb
 
-    puts "generate cpu metrics"
-    ssh_job(ec2_instances(reservation.reservation_id), JOB_TYPE_CPU)
+    simulate_app_situation
 
-    puts "generate disk metrics"
-    ssh_job(ec2_instances(reservation.reservation_id), JOB_TYPE_DISK)
+  end
 
-    puts "generate network metrics"
-    ssh_job(ec2_instances(reservation.reservation_id), JOB_TYPE_NETWORK)
+  desc 'pry --options', 'run tester'
+  def pry
+    apply_config
+    binding.pry
+  end
 
-    # puts "generating end. shutting down"
-    # shut_down
-    puts "script end"
+  desc 'deploy --options', 'deploy'
+  def deploy
+    apply_config
+
+    @ec2_instances = current_ec2_instances
+
+    deploy_sauron_test_rails_app
+
+    attach_ec2_instances_to_elb
   end
 
   desc 'shut_down --options', 'Shut down instances'
@@ -68,16 +61,137 @@ class SauronTester < Thor
   end
 
   private
+  def config
+    @config ||= (
+      c = YAML::load(File.open('../config.yml'))
+      required_keys = [
+        "client_id",
+        "access_key_id",
+        "secret_access_key",
+        "region",
+        "services",
+        "elasticsearch_domain"
+      ]
+
+      required_keys.each do |key|
+        raise Thor::Error.new("Error: #{key} should exist in config.yml") unless c.key?(key)
+      end
+
+      c
+    )
+  end
+
+  def create_ec2_instances
+    puts "start create_ec2_instances"
+    reservation = ec2.run_instances(ec2_options)
+    @ec2_instances = ec2_instances(reservation.reservation_id)
+    puts "end create_ec2_instances"
+  end
+
+  def create_rds_instances
+    puts "start create_rds_instances"
+
+    begin
+      rds.describe_db_instances({
+        db_instance_identifier: TEST_RDS_IDENTIFIER
+      })
+
+      puts "RDB Identifier : #{TEST_RDS_IDENTIFIER} already exist."
+      puts "Use #{TEST_RDS_IDENTIFIER}"
+    rescue Aws::RDS::Errors::DBInstanceNotFound => _
+      rds.create_db_instance({
+        db_name: "sauron_test_app_prod",
+        db_instance_identifier: TEST_RDS_IDENTIFIER,
+        allocated_storage: 1,
+        db_instance_class: "db.t2.micro",
+        engine: "MySQL",
+        master_username: "root",
+        master_user_password: "saurontest",
+        multi_az: false,
+      })
+    end
+
+    puts "end create_rds_instances"
+  end
+
+  def wait_ec2_rds_instances
+    puts "start wait_ec2_rds_instances"
+
+    while true
+      puts "waiting..."
+      all_running = @ec2_instances.inject(true) do |bool, instance|
+        bool &&= instance_is_running?(instance)
+      end
+
+      break if all_running
+
+      sleep(10)
+    end
+    puts "all instance is now running"
+
+    puts "wait instance run ssh daemon"
+    sleep(30)
+
+    puts "end wait_ec2_rds_instances"
+  end
+
+  def deploy_sauron_test_rails_app
+    puts "start deploy_sauron_test_rails_app"
+
+    puts "start make environment file"
+    db = rds.describe_db_instances({
+      db_instance_identifier: TEST_RDS_IDENTIFIER
+    }).db_instances.first
+
+    test_app_env = {
+      "DATABASE_HOST" => db.endpoint.address,
+      "SERVERS" => @ec2_instances.map{|x| x.public_dns_name}
+    }
+
+    f = File.new("sauron_test/env.yml", "w")
+    f.write(test_app_env.to_yaml)
+    f.close
+    puts "end make environment file"
+
+    `cd sauron_test; AWS_ACCESS_KEY_ID=#{ENV["AWS_ACCESS_KEY_ID"]} AWS_SECRET_ACCESS_KEY=#{ENV["AWS_SECRET_ACCESS_KEY"]} cap production deploy`
+
+    puts "end deploy_sauron_test_rails_app"
+  end
+
+  def attach_ec2_instances_to_elb
+    puts "start attach_ec2_instances_to_elb"
+
+    elb.register_instances_with_load_balancer({
+      load_balancer_name: "sauron-test",
+      instances: @ec2_instances.map{|x| {instance_id: x.instance_id}}
+    })
+
+    puts "end attach_ec2_instances_to_elb"
+  end
+
+  def simulate_app_situation
+    puts "start simulate_app_situation"
+    puts "end simulate_app_situation"
+  end
+
 
   def apply_config
     Aws.config.update({
-      region: 'ap-northeast-2',
-      credentials: Aws::Credentials.new(ENV["AWS_ACCESS_KEY_ID"], ENV["AWS_SECRET_ACCESS_KEY"])
+      region: config["region"],
+      credentials: Aws::Credentials.new(config["access_key_id"], config["secret_access_key"])
     })
   end
 
   def ec2
     @ec2 ||= Aws::EC2::Client.new
+  end
+
+  def rds
+    @rds ||= Aws::RDS::Client.new
+  end
+
+  def elb
+    @elb ||= Aws::ElasticLoadBalancing::Client.new
   end
 
   def instance_is_running?(instance)
@@ -101,7 +215,7 @@ class SauronTester < Thor
   def ec2_options
     {
       dry_run: false,
-      key_name: "sauron",
+      key_name: "sauron_tokyo",
       security_groups: ["default"],
       image_id: AMI_ID, # required
       min_count: 1, # required
@@ -113,26 +227,19 @@ class SauronTester < Thor
     }
   end
 
-  def ssh_job(instances, job_type)
+  def bulk_request
     threads = []
     instances.each do |instance|
       threads << Thread.new do
-        puts "run #{job_type} in #{instance.instance_id}"
-        Net::SSH.start(instance.public_dns_name, "ubuntu", :keys => "/Users/yujun/.ssh/sauron.pem" ) do |ssh|
-          if job_type == JOB_TYPE_CPU
-            ssh.exec!("source ~/.bash_profile ; ruby cpu.rb")
-          elsif job_type == JOB_TYPE_DISK
-            ssh.exec!("source ~/.bash_profile ; ruby disk.rb")
-          elsif job_type == JOB_TYPE_NETWORK
-            ssh.exec!("source ~/.bash_profile ; ruby network.rb")
-          end
-        end
+        open("http://sauron-test-1904209314.ap-northeast-1.elb.amazonaws.com")
         Thread::exit()
       end
     end
 
     threads.each(&:join)
   end
+
+  default_task :run_test
 end
 
 SauronTester.start(ARGV)

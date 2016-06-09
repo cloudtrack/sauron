@@ -1,4 +1,5 @@
 require 'aws-sdk'
+require 'yaml'
 
 # server-based syntax
 # ======================
@@ -9,25 +10,9 @@ require 'aws-sdk'
 # server 'example.com', user: 'deploy', roles: %w{app web}, other_property: :other_value
 # server 'db.example.com', user: 'deploy', roles: %w{db}
 
+set :default_env, YAML::load(File.open('../../env.yml'))
 
-aws_credential = {
-  aws_access_key_id: ENV["AWS_ACCESS_KEY_ID"],
-  aws_secret_access_key: ENV["AWS_SECRET_ACCESS_KEY"]
-}
-
-Aws.config.update({
-  region: 'ap-northeast-1',
-  credentials: Aws::Credentials.new(aws_credential[:aws_access_key_id], aws_credential[:aws_secret_access_key])
-})
-
-ec2 = Aws::EC2::Client.new
-
-instances = []
-ec2.describe_instances.reservations.each do |r|
-  instances += r.instances.select{|x| x.state.code == 16}
-end
-
-instances.each_with_index do |instance, idx|
+ENV["SERVERS"].each_with_index do |instance, idx|
   if idx == 0
     server instance.public_dns_name, user: 'sauron', roles: %w{app web db}
   else

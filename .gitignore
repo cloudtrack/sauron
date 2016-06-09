@@ -3,3 +3,4 @@ node_modules
 collector.zip
 
 collector/.env
+tester/sauron_test/env.yml

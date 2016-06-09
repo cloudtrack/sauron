@@ -7,6 +7,7 @@ require 'thread'
 require 'net/ssh'
 require 'net/http'
 require 'pry'
+require 'open-uri'
 
 AMI_ID = "ami-b45ab3d5"
 RDS_IDENTIFIER = "sauron-test"
@@ -224,7 +225,7 @@ class SauronTester < Thor
     log 2, "all instances are now running"
 
     log 2, "wait instance run ssh daemon"
-    sleep(30)
+    sleep(60)
     @ec2_instances = ec2_instances(@reservation.reservation_id)
 
     log 1, "[wait_ec2_rds_instances] end"
@@ -287,6 +288,75 @@ class SauronTester < Thor
   def simulate_app_situation
     log 1, "[simulate_app_situation] start"
 
+    dns = elb.describe_load_balancers({
+      load_balancer_names: [ELB_NAME]
+    }).load_balancer_descriptions.first.dns_name
+
+    ["cpu", "disk", "network", "database"].each do |indicator|
+      log 2, "simulate #{indicator}"
+
+      mutex = Mutex.new
+
+      total_number = 200
+      complete_number = 0
+      threads = []
+      print "\t\t\t#{indicator} test : [#{complete_number}/#{total_number}] completed"
+
+      total_number.times do
+        threads << Thread.new do
+          open("http://#{dns}/#{indicator}") rescue nil
+          mutex.synchronize do
+            complete_number += 1
+            print "\r"
+            print "\t\t\t#{indicator} test : [#{complete_number}/#{total_number}] completed"
+          end
+          Thread::exit()
+        end
+      end
+
+      threads.each(&:join)
+      puts ""
+    end
+
+    log 2, "simulate response type"
+    total_number = 2000
+    complete_number = 0
+    success_number = 0
+    bad_request_number = 0
+    server_error_number = 0
+    puts "\t\t\tresponse type test"
+    print "\t\t\t[#{complete_number}/#{total_number}] ( success:#{success_number} | bad_request:#{bad_request_number} | server_error:#{server_error_number} )"
+    (total_number/100).times do
+
+      mutex = Mutex.new
+      threads = []
+      100.times do
+        threads << Thread.new do
+          case rand(3)
+          when 0
+            type = "success"
+            success_number += 1
+          when 1
+            type = "bad_request"
+            bad_request_number += 1
+          else
+            type = "server_error"
+            server_error_number += 1
+          end
+          open("http://#{dns}/#{type}") rescue nil
+          mutex.synchronize do
+            complete_number += 1
+            print "\r"
+            print "\t\t\t[#{complete_number}/#{total_number}] ( success:#{success_number} | bad_request:#{bad_request_number} | server_error:#{server_error_number} )"
+          end
+          Thread::exit()
+        end
+      end
+      threads.each(&:join)
+
+    end
+    puts ""
+
     log 1, "[simulate_app_situation] end"
   end
 
@@ -333,25 +403,13 @@ class SauronTester < Thor
       dry_run: false,
       security_groups: [SECURITY_GROUP_NAME],
       image_id: AMI_ID, # required
-      min_count: 1, # required
-      max_count: 1, # required
+      min_count: 20, # required
+      max_count: 20, # required
       instance_type: "t2.micro",
       monitoring: {
         enabled: true, # required
       },
     }
-  end
-
-  def bulk_request
-    threads = []
-    instances.each do |instance|
-      threads << Thread.new do
-        open("http://sauron-test-1904209314.ap-northeast-1.elb.amazonaws.com")
-        Thread::exit()
-      end
-    end
-
-    threads.each(&:join)
   end
 
   default_task :run_test

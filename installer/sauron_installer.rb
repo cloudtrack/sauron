@@ -34,7 +34,7 @@ class SauronInstaller < Thor
   def test
     apply_config
 
-    upload_collector_to_lambda
+    link_lambda_with_cloudwatch
    # binding.pry
   end
 
@@ -143,7 +143,7 @@ class SauronInstaller < Thor
             "Effect": "Allow",
             "Action": "sts:AssumeRole",
             "Principal": {"Service": "lambda.amazonaws.com"}
-          }
+          },
         ]
       }
       '''
@@ -176,12 +176,49 @@ class SauronInstaller < Thor
 
   def link_lambda_with_cloudwatch
     puts "start link_lambda_with_cloudwatch"
+
+    resp = cw_event.put_rule({
+      name: "sauron.collect",
+      schedule_expression: "rate(5 minutes)",
+      state: "ENABLED",
+      description: "Firing lambda function",
+    })
+
+    aws_lambda.add_permission({
+      function_name: "sauron",
+      statement_id: "1q2w3e4r",
+      action: "lambda:InvokeFunction",
+      principal: "events.amazonaws.com",
+      source_arn: resp.rule_arn
+    })
+
+    info = aws_lambda.get_function({
+      function_name: "sauron"
+    })
+
+    cw_event.put_targets({
+      rule: "sauron.collect",
+      targets: [
+        {
+          id: "1q2w3e4r",
+          arn: info.configuration.function_arn
+        },
+      ],
+    })
+
+    cw_event.put_events({
+      entries: [
+        {
+          time: Time.now,
+          source:"sauron.collect"
+        },
+      ],
+    })
     puts "end link_lambda_with_cloudwatch"
   end
 
   def add_dashboard_to_kibana
     puts "start add_dashboard_to_kibana"
-
     puts "end add_dashboard_to_kibana"
   end
 
@@ -211,12 +248,10 @@ class SauronInstaller < Thor
     )
   end
 
-  def s3
-    @s3 ||= Aws::S3::Client.new(
-      region: config["region"],
-      credentials: Aws::Credentials.new(config["access_key_id"], config["secret_access_key"])
-    )
+  def cw_event
+    @cw_event ||= Aws::CloudWatchEvents::Client.new(region: config["region"])
   end
+
   default_task :install
 end
 

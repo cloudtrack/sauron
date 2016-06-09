@@ -135,16 +135,14 @@ class SauronTester < Thor
     puts "end wait_ec2_rds_instances"
   end
 
-  def deploy_sauron_test_rails_app
-    puts "start deploy_sauron_test_rails_app"
-
+  def make_environment_file
     puts "start make environment file"
     db = rds.describe_db_instances({
       db_instance_identifier: TEST_RDS_IDENTIFIER
     }).db_instances.first
 
     test_app_env = {
-      "DATABASE_HOST" => db.endpoint.address,
+      "DATABASE_URL" => db.endpoint.address,
       "SERVERS" => @ec2_instances.map{|x| x.public_dns_name}
     }
 
@@ -152,8 +150,14 @@ class SauronTester < Thor
     f.write(test_app_env.to_yaml)
     f.close
     puts "end make environment file"
+  end
 
-    `cd sauron_test; AWS_ACCESS_KEY_ID=#{ENV["AWS_ACCESS_KEY_ID"]} AWS_SECRET_ACCESS_KEY=#{ENV["AWS_SECRET_ACCESS_KEY"]} cap production deploy`
+  def deploy_sauron_test_rails_app
+    puts "start deploy_sauron_test_rails_app"
+
+    make_environment_file
+
+    `cd sauron_test; cap production deploy`
 
     puts "end deploy_sauron_test_rails_app"
   end

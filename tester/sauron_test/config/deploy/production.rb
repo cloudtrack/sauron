@@ -10,13 +10,15 @@ require 'yaml'
 # server 'example.com', user: 'deploy', roles: %w{app web}, other_property: :other_value
 # server 'db.example.com', user: 'deploy', roles: %w{db}
 
-set :default_env, YAML::load(File.open('../../env.yml'))
+custom_env = YAML::load(File.open('env.yml'))
+set :default_env, custom_env
+set :passenger_environment_variables, custom_env
 
-ENV["SERVERS"].each_with_index do |instance, idx|
+custom_env["SERVERS"].each_with_index do |dns, idx|
   if idx == 0
-    server instance.public_dns_name, user: 'sauron', roles: %w{app web db}
+    server dns, user: 'sauron', roles: %w{app web db}
   else
-    server instance.public_dns_name, user: 'sauron', roles: %w{app web}
+    server dns, user: 'sauron', roles: %w{app web}
   end
 end
 

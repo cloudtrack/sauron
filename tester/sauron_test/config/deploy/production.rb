@@ -13,6 +13,8 @@ require 'yaml'
 custom_env = YAML::load(File.open('env.yml'))
 set :default_env, custom_env
 set :passenger_environment_variables, custom_env
+set :passenger_restart_command, 'passenger-config restart-app'
+set :linked_files, fetch(:linked_files, []).push('config/database.yml')
 
 custom_env["SERVERS"].each_with_index do |dns, idx|
   if idx == 0
@@ -53,6 +55,37 @@ set :ssh_options, {
   forward_agent: true,
   auth_methods: %w(publickey)
 }
+
+namespace :deploy do
+
+  before :starting, :add_database do
+    on roles(:all) do
+      db_config = <<-EOF
+        development:
+          adapter: mysql2
+          database: sauron_test_app_dev
+          encoding: utf8
+          username: root
+          host: localhost
+          encoding: utf8mb4
+          collation: utf8mb4_bin
+
+        production:
+          adapter: mysql2
+          database: sauron_test_app_prod
+          encoding: utf8
+          username: root
+          password: saurontest
+          host: #{custom_env["URL_DATABASE"]}
+          encoding: utf8mb4
+          collation: utf8mb4_bin
+      EOF
+
+      upload! StringIO.new(db_config), "#{shared_path}/config/database.yml"
+    end
+  end
+
+end
 
 # Custom SSH Options
 # ==================

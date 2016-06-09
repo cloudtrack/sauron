@@ -3,19 +3,28 @@ console.log('Loading function');
 var async = require('async');
 var _ = require('lodash');
 
+// Load configuration produced by configuration process.
+var yaml = require('js-yaml');
+var fs = require('fs');
+var config = loadConfigure();
+if (config === null) {
+  console.log("Fail to load config.yml file. Please verify that you have config.yml in same directory.");
+  return ;
+}
+
+// Load aws-sdk module.
 var aws = require('aws-sdk');
-aws.config.update({region: 'ap-northeast-1'});
+aws.config.update({region: config.region});
 var EC2 = new aws.EC2();
 var RDS = new aws.RDS();
 var ELB = new aws.ELB();
 var CloudWatch = new aws.CloudWatch({apiVersion: '2010-08-01'});
 var AWS_ES = new aws.ES({apiVersion: '2015-01-01'});
+var Lambda = new aws.Lambda();
 
 // for Elasticsearch Kibana
 var ES = require('elasticsearch');
-var client = new ES.Client({
-  host: 'search-sauron-xjk7ro2fmqho5oiwdktffm4cca.ap-northeast-1.es.amazonaws.com'
-});
+var client;
 
 var metricList = require('./metricList.js');
 var commonParams = {
@@ -28,28 +37,59 @@ var paramsList = _.map(metricList, function(metricParams) {
 });
 
 exports.handler = function(event, context) {
-  async.parallel({
-    ec2: fetchEC2Resources,
-    rds: fetchRDSResources,
-    elb: fetchELBResources,
-    lambda: fetchLambdaResources,
-    es:fetchESResources
-  }, function (err, instances) {
-    var instancesWithType = []
+  var services = {};
+  for (var service in config.services) {
+    switch(config.services[service]) {
+      case 'EC2':
+        services['ec2'] = fetchEC2Resources;
+        break
+      case 'RDS':
+        services['rds'] = fetchRDSResources;
+        break
+      case 'ELB':
+        services['elb'] = fetchELBResources;
+        break
+      case 'Lambda':
+        services['lambda'] = fetchLambdaResources;
+        break
+      case 'ElasticSearch':
+        services['es'] = fetchESResources;
+        break
+    }
+  }
 
-    _.each(instances, function(instances, type) {
-      _.each(instances, function(instance) {
-        instancesWithType.push([instance, type])
-      })
-    })
+  if (config.elasticsearch_domain !== "") {
+    AWS_ES.describeElasticsearchDomain({
+      DomainName: config.elasticsearch_domain
+    }, function(err, data) {
+      if (err) {
+        console.log("Cannot find specific Elasticsearch with DomainName : ", config.elasticsearch_domain);
+      }else {
+        var status = data.DomainStatus;
+        var hostURL = status.Endpoint;
+        client = new ES.Client({
+          host: hostURL
+        });
 
-    async.each(instancesWithType, function(instanceWithType, callback) {
-      indexInstanceMetrics(instanceWithType, callback)
-    }, function (err) {
-      if (err) console.log(err);
-      else context.succeed();
-    })
-  })
+        async.parallel(services, function (err, instances) {
+          var instancesWithType = []
+
+          _.each(instances, function(instances, type) {
+            _.each(instances, function(instance) {
+              instancesWithType.push([instance, type])
+            })
+          })
+
+          async.each(instancesWithType, function(instanceWithType, callback) {
+            indexInstanceMetrics(instanceWithType, callback)
+          }, function (err) {
+            if (err) console.log("failed because of ", err);
+            else context.succeed();
+          })
+        })
+      }
+    });
+  }
 }
 
 function indexInstanceMetrics(instanceWithType, callback) {
@@ -89,12 +129,12 @@ function dimensionParams(instance, type) {
     case 'elb':
       dimensionParams.push({ Name: 'LoadBalancerName', Value: instance.LoadBalancerName})
       break
-    case 'lambda:
+    case 'lambda':
       dimensionParams.push({ Name: 'FunctionName', Value: instance.FunctionName})
       break
     case 'es':
       dimensionParams.push({ Name: 'DomainName', Value: instance.DomainName })
-      //dimensionParams.push({ Name: 'ClientId', Value: 'YourClientId' })
+      dimensionParams.push({ Name: 'ClientId', Value: config.client_id })
       break
   }
 
@@ -200,12 +240,17 @@ function fetchEC2Resources(callback) {
       console.log('Failed to fetch EC2 Instances', err)
       return callback(err)
     }
-    var instances = _.flatten(_.pluck(data.Reservations, 'Instances'))
-    var updates = _.flatten(_.map(instances, function (i) { return upsertResourceQuery(i, 'ec2') }))
-    client.bulk({ body: updates }, function(err, resp) {
-      if (err) { return callback(err) }
-      callback(null, instances)
-    })
+
+    if (data.Reservations.length !== 0) {
+      var instances = _.flatten(_.pluck(data.Reservations, 'Instances'))
+      var updates = _.flatten(_.map(instances, function (i) { return upsertResourceQuery(i, 'ec2') }))
+      client.bulk({ body: updates }, function(err, resp) {
+        if (err) { return callback(err) }
+        callback(null, instances)
+      })
+    }else {
+      return callback(err);
+    }
   })
 }
 
@@ -216,20 +261,27 @@ function fetchRDSResources(callback) {
       return callback(err)
     }
 
-    async.map(data.DBInstances, function(instance, callback) {
-      RDS.listTagsForResource({
-        ResourceName: constructRDSInstanceARN(instance)
-      }, function(err, data) {
-        callback(err, data.TagList)
+    if (data.DBInstances.length !== 0) {
+      async.map(data.DBInstances, function(instance, callback) {
+        RDS.listTagsForResource({
+          ResourceName: constructRDSInstanceARN(instance)
+        }, function(err, data) {
+          if (data !== null)
+            callback(err, data.TagList)
+          else
+            callback(err)
+        })
+      }, function(err, tagLists) {
+        var instancesWithTags = _.zipWith(data.DBInstances, tagLists, function (instance, tagList) { return _.merge(instance, { Tags: tagList }) })
+        var updates = _.flatten(_.map(instancesWithTags, function (i) { return upsertResourceQuery(i, 'rds') }))
+        client.bulk({ body: updates }, function(err, resp) {
+          if (err) { return callback(err) }
+          callback(null, instancesWithTags)
+        })
       })
-    }, function(err, tagLists) {
-      var instancesWithTags = _.zipWith(data.DBInstances, tagLists, function (instance, tagList) { return _.merge(instance, { Tags: tagList }) })
-      var updates = _.flatten(_.map(instancesWithTags, function (i) { return upsertResourceQuery(i, 'rds') }))
-      client.bulk({ body: updates }, function(err, resp) {
-        if (err) { return callback(err) }
-        callback(null, instancesWithTags)
-      })
-    })
+    }else {
+      return callback(err);
+    }
   })
 }
 
@@ -241,17 +293,20 @@ function fetchELBResources(callback) {
     }
 
     var elbInstances = data.LoadBalancerDescriptions
-
-    ELB.describeTags({
-      LoadBalancerNames: _.pluck(elbInstances, 'LoadBalancerName')
-    }, function(err, data) {
-      var instancesWithTags = _.zipWith(elbInstances, data.TagDescriptions, function (instance, tagDescription) { return _.merge(instance, { Tags: tagDescription.Tags }) })
-      var updates = _.flatten(_.map(instancesWithTags, function (i) { return upsertResourceQuery(i, 'elb') }))
-      client.bulk({ body: updates }, function(err, resp) {
-        if (err) { return callback(err) }
-        callback(null, instancesWithTags)
+    if (elbInstances.length !== 0) {
+      ELB.describeTags({
+        LoadBalancerNames: _.pluck(elbInstances, 'LoadBalancerName')
+      }, function(err, data) {
+        var instancesWithTags = _.zipWith(elbInstances, data.TagDescriptions, function (instance, tagDescription) { return _.merge(instance, { Tags: tagDescription.Tags }) })
+        var updates = _.flatten(_.map(instancesWithTags, function (i) { return upsertResourceQuery(i, 'elb') }))
+        client.bulk({ body: updates }, function(err, resp) {
+          if (err) { return callback(err) }
+          callback(null, instancesWithTags)
+        })
       })
-    })
+    }else {
+      return callback(err);
+    }
   })
 }
 
@@ -262,18 +317,21 @@ function fetchLambdaResources(callback) {
       return;
     }
 
-    var functions = data.Functions
-    var updates = _.flatten(_.map(functions, function (i) { return upsertResourceQuery(i, 'lambda') }))
-    client.bulk({ body: updates }, function(err, resp) {
-      if (err) { return callback(err) }
-      callback(null, functions)
-    })
+    if (data.Functions.length !== 0) {
+      var functions = data.Functions
+      var updates = _.flatten(_.map(functions, function (i) { return upsertResourceQuery(i, 'lambda') }))
+      client.bulk({ body: updates }, function(err, resp) {
+        if (err) { return callback(err) }
+        callback(null, functions)
+      })
+    }else {
+      return callback(err);
+    }
   });
 }
 
 function fetchESResources(callback) {
   AWS_ES.listDomainNames({}, function(err, data) {
-
     var names = data.DomainNames;
     AWS_ES.describeElasticsearchDomains({
       DomainNames: _.pluck(names, 'DomainName')
@@ -286,4 +344,14 @@ function fetchESResources(callback) {
       });
     });
   });
+}
+
+function loadConfigure() {
+  try {
+    var doc = yaml.safeLoad(fs.readFileSync('config.yml'), 'utf-8');
+    return doc;
+  } catch (e) {
+    console.log(e);
+    return null;
+  }
 }

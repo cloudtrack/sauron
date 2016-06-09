@@ -1,6 +1,6 @@
 node_modules
 *.DS_Store
 collector.zip
-
+collector/config.yml
 collector/.env
 tester/sauron_test/env.yml

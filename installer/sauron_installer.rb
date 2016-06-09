@@ -1,15 +1,16 @@
 # require 'json'
 # require 'factory_girl'
-# require 'elasticsearch'
 # require 'thread'
 
 require 'thor'
 require 'yaml'
 require 'aws-sdk'
+require 'elasticsearch'
 require 'active_support/all'
+require 'json'
 # require 'net/ssh'
 # require 'net/http'
-# require 'pry'
+require 'pry'
 
 class SauronInstaller < Thor
   desc 'install --options', 'install sauron'
@@ -32,8 +33,8 @@ class SauronInstaller < Thor
     binding.pry
   end
 
-  desc 'test --options', 'install sauron'
-  def test
+  desc 'pry --options', 'install sauron'
+  def pry
     apply_config
 
     binding.pry
@@ -159,6 +160,15 @@ class SauronInstaller < Thor
   def add_dashboard_to_kibana
     puts "start add_dashboard_to_kibana"
 
+    dashboard_data = JSON.parse(File.open("dashboard.json").read)
+    bulk_data = []
+    dashboard_data.each do |d|
+      bulk_data << { index: d.slice("_index", "_type", "_id", "_score", "_version")}
+      bulk_data << d["_source"]
+    end
+
+    es.bulk body: bulk_data
+
     puts "end add_dashboard_to_kibana"
   end
 
@@ -179,6 +189,10 @@ class SauronInstaller < Thor
 
   def aws_lambda
     @aws_lambda ||= Aws::Lambda::Client.new
+  end
+
+  def es
+    @es ||= Elasticsearch::Client.new host: 'search-sauron-xjk7ro2fmqho5oiwdktffm4cca.ap-northeast-1.es.amazonaws.com:80'
   end
 
   default_task :install

@@ -168,7 +168,8 @@ class SauronInstaller < Thor
       code: {
         zip_file: File.open('collector.zip').read,
       },
-      description: "Sauron collector"
+      description: "Sauron collector",
+      timeout: 30
     })
 
     puts "end upload_collector_to_lambda"

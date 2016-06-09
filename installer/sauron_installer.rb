@@ -34,6 +34,8 @@ class SauronInstaller < Thor
 
   desc 'test --options', 'install sauron'
   def test
+    apply_config
+
     binding.pry
   end
 
@@ -132,6 +134,18 @@ class SauronInstaller < Thor
 
   def upload_collector_to_lambda
     puts "start upload_collector_to_lambda"
+    aws_lambda.create_function({
+      function_name: "sauron",
+      runtime: "nodejs4.3",
+      role: "lambda_basic_execution",
+      handler: "index.handler",
+      code: {
+        zip_file: "../collect"
+      },
+      description: "Sauron collector",
+      timeout: 60,
+      memory_size: 128
+    })
 
     puts "end upload_collector_to_lambda"
   end
@@ -161,6 +175,10 @@ class SauronInstaller < Thor
 
   def es
     @es ||= Aws::ElasticsearchService::Client.new
+  end
+
+  def aws_lambda
+    @aws_lambda ||= Aws::Lambda::Client.new
   end
 
   default_task :install

@@ -2,6 +2,7 @@
 # require 'factory_girl'
 # require 'thread'
 
+# require 'pry'
 require 'thor'
 require 'yaml'
 require 'aws-sdk'
@@ -10,7 +11,6 @@ require 'active_support/all'
 require 'json'
 # require 'net/ssh'
 # require 'net/http'
-require 'pry'
 
 class SauronInstaller < Thor
   desc 'install --options', 'install sauron'
@@ -29,15 +29,14 @@ class SauronInstaller < Thor
     link_lambda_with_cloudwatch
 
     add_dashboard_to_kibana
-
-    binding.pry
   end
 
   desc 'pry --options', 'install sauron'
   def pry
     apply_config
 
-    binding.pry
+    # link_lambda_with_cloudwatch
+    # binding.pry
   end
 
   private
@@ -86,14 +85,14 @@ class SauronInstaller < Thor
     '''
 
     begin
-      es.describe_elasticsearch_domain({
+      aws_es.describe_elasticsearch_domain({
         domain_name: config["elasticsearch_domain"]
       })
 
       puts "Elasticsearch Domain : #{config["elasticsearch_domain"]} already exist."
       puts "Use #{config["elasticsearch_domain"]} Elasticsearch instance"
     rescue Aws::ElasticsearchService::Errors::ResourceNotFoundException => _
-      es.create_elasticsearch_domain({
+      aws_es.create_elasticsearch_domain({
         domain_name: config["elasticsearch_domain"],
         elasticsearch_cluster_config: {
           instance_type: "t2.micro.elasticsearch",
@@ -135,17 +134,43 @@ class SauronInstaller < Thor
 
   def upload_collector_to_lambda
     puts "start upload_collector_to_lambda"
+
+    begin
+      policy_document = '''
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": "sts:AssumeRole",
+            "Principal": {"Service": "lambda.amazonaws.com"}
+          },
+        ]
+      }
+      '''
+    rescue Aws::IAM::Errors::EntityAlreadyExists => _
+      resp = aws_iam.create_role({
+        role_name: "sauron_lambda_execution",
+        assume_role_policy_document: policy_document
+      })
+
+      puts resp
+    end
+
+    use_role = aws_iam.get_role({
+      role_name: "sauron_lambda_execution"
+    })
+
     aws_lambda.create_function({
       function_name: "sauron",
       runtime: "nodejs4.3",
-      role: "lambda_basic_execution",
+      role: use_role.role.arn,
       handler: "index.handler",
       code: {
-        zip_file: "../collector.zip"
+        zip_file: File.open('collector.zip').read,
       },
       description: "Sauron collector",
-      timeout: 60,
-      memory_size: 128
+      timeout: 30
     })
 
     puts "end upload_collector_to_lambda"
@@ -154,6 +179,43 @@ class SauronInstaller < Thor
   def link_lambda_with_cloudwatch
     puts "start link_lambda_with_cloudwatch"
 
+    resp = cw_event.put_rule({
+      name: "sauron.collect",
+      schedule_expression: "rate(5 minutes)",
+      state: "ENABLED",
+      description: "Firing lambda function",
+    })
+
+    aws_lambda.add_permission({
+      function_name: "sauron",
+      statement_id: "1q2w3e4r",
+      action: "lambda:InvokeFunction",
+      principal: "events.amazonaws.com",
+      source_arn: resp.rule_arn
+    })
+
+    info = aws_lambda.get_function({
+      function_name: "sauron"
+    })
+
+    cw_event.put_targets({
+      rule: "sauron.collect",
+      targets: [
+        {
+          id: "1q2w3e4r",
+          arn: info.configuration.function_arn
+        },
+      ],
+    })
+
+    cw_event.put_events({
+      entries: [
+        {
+          time: Time.now,
+          source:"sauron.collect"
+        },
+      ],
+    })
     puts "end link_lambda_with_cloudwatch"
   end
 
@@ -183,8 +245,8 @@ class SauronInstaller < Thor
     @ec2 ||= Aws::EC2::Client.new
   end
 
-  def es
-    @es ||= Aws::ElasticsearchService::Client.new
+  def aws_es
+    @aws_es ||= Aws::ElasticsearchService::Client.new
   end
 
   def aws_lambda
@@ -193,6 +255,17 @@ class SauronInstaller < Thor
 
   def es
     @es ||= Elasticsearch::Client.new host: 'search-sauron-xjk7ro2fmqho5oiwdktffm4cca.ap-northeast-1.es.amazonaws.com:80'
+  end
+
+  def aws_iam
+    @aws_iam ||= Aws::IAM::Client.new(
+      access_key_id: config["access_key_id"],
+      secret_access_key: config["secret_access_key"]
+    )
+  end
+
+  def cw_event
+    @cw_event ||= Aws::CloudWatchEvents::Client.new(region: config["region"])
   end
 
   default_task :install

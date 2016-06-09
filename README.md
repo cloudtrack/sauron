@@ -39,7 +39,7 @@ If you want to monitor each server stacks as like web servers, application serve
     $ cd installer && ruby sauron_installer.rb
     ~~~
 
-5. (optional)move to tester and run sauron_tester
+5. (optional) move to tester and run sauron_tester
     ~~~ sh
     $ cd tester && ruby sauron_tester.rb
     ~~~

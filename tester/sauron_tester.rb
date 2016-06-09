@@ -412,18 +412,6 @@ class SauronTester < Thor
     }
   end
 
-  def bulk_request
-    threads = []
-    instances.each do |instance|
-      threads << Thread.new do
-        open("http://sauron-test-1904209314.ap-northeast-1.elb.amazonaws.com")
-        Thread::exit()
-      end
-    end
-
-    threads.each(&:join)
-  end
-
   default_task :run_test
 end
 

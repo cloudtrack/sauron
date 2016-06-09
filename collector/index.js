@@ -12,15 +12,19 @@ if (config === null) {
   return ;
 }
 
+
 // Load aws-sdk module.
 var aws = require('aws-sdk');
 aws.config.update({region: config.region});
-var EC2 = new aws.EC2();
-var RDS = new aws.RDS();
-var ELB = new aws.ELB();
-var CloudWatch = new aws.CloudWatch({apiVersion: '2010-08-01'});
-var AWS_ES = new aws.ES({apiVersion: '2015-01-01'});
-var Lambda = new aws.Lambda();
+
+var credentials = new aws.Credentials("access key", "secret key")
+
+var EC2 = new aws.EC2({credentials: credentials});
+var RDS = new aws.RDS({credentials: credentials});
+var ELB = new aws.ELB({credentials: credentials});
+var CloudWatch = new aws.CloudWatch({apiVersion: '2010-08-01', credentials: credentials});
+var AWS_ES = new aws.ES({apiVersion: '2015-01-01', credentials: credentials});
+var Lambda = new aws.Lambda({credentials: credentials});
 
 // for Elasticsearch Kibana
 var ES = require('elasticsearch');

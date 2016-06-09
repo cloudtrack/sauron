@@ -1,0 +1,13 @@
+# DO NOT push your key up to github or other open space
+---
+client_id: "client_id"
+access_key_id: "access_key_id"
+secret_access_key: "secret_access_key"
+region: "ap-northeast-1"
+services:
+  - "EC2"
+  - "RDS"
+  - "ELB"
+  - "ElasticSearch"
+  - "Lambda"
+elasticsearch_domain: "sauron"

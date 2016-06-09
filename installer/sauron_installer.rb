@@ -3,13 +3,13 @@
 # require 'elasticsearch'
 # require 'thread'
 
+require 'pry'
 require 'thor'
 require 'yaml'
 require 'aws-sdk'
 require 'active_support/all'
 # require 'net/ssh'
 # require 'net/http'
-# require 'pry'
 
 class SauronInstaller < Thor
   desc 'install --options', 'install sauron'
@@ -28,15 +28,14 @@ class SauronInstaller < Thor
     link_lambda_with_cloudwatch
 
     add_dashboard_to_kibana
-
-    binding.pry
   end
 
   desc 'test --options', 'install sauron'
   def test
     apply_config
 
-    binding.pry
+    upload_collector_to_lambda
+   # binding.pry
   end
 
   private
@@ -134,17 +133,42 @@ class SauronInstaller < Thor
 
   def upload_collector_to_lambda
     puts "start upload_collector_to_lambda"
+
+    begin
+      policy_document = '''
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": "sts:AssumeRole",
+            "Principal": {"Service": "lambda.amazonaws.com"}
+          }
+        ]
+      }
+      '''
+    rescue Aws::IAM::Errors::EntityAlreadyExists => _
+      resp = aws_iam.create_role({
+        role_name: "sauron_lambda_execution",
+        assume_role_policy_document: policy_document
+      })
+
+      puts resp
+    end
+
+    use_role = aws_iam.get_role({
+      role_name: "sauron_lambda_execution"
+    })
+
     aws_lambda.create_function({
       function_name: "sauron",
       runtime: "nodejs4.3",
-      role: "lambda_basic_execution",
+      role: use_role.role.arn,
       handler: "index.handler",
       code: {
-        zip_file: "../collector.zip"
+        zip_file: File.open('collector.zip').read,
       },
-      description: "Sauron collector",
-      timeout: 60,
-      memory_size: 128
+      description: "Sauron collector"
     })
 
     puts "end upload_collector_to_lambda"
@@ -152,7 +176,6 @@ class SauronInstaller < Thor
 
   def link_lambda_with_cloudwatch
     puts "start link_lambda_with_cloudwatch"
-
     puts "end link_lambda_with_cloudwatch"
   end
 
@@ -181,6 +204,19 @@ class SauronInstaller < Thor
     @aws_lambda ||= Aws::Lambda::Client.new
   end
 
+  def aws_iam
+    @aws_iam ||= Aws::IAM::Client.new(
+      access_key_id: config["access_key_id"],
+      secret_access_key: config["secret_access_key"]
+    )
+  end
+
+  def s3
+    @s3 ||= Aws::S3::Client.new(
+      region: config["region"],
+      credentials: Aws::Credentials.new(config["access_key_id"], config["secret_access_key"])
+    )
+  end
   default_task :install
 end
 

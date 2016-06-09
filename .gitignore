@@ -1,5 +1,5 @@
 node_modules
 *.DS_Store
-collect.zip
+collector.zip
 
-collect/.env
+collector/.env

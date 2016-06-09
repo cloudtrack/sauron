@@ -1,0 +1,10 @@
+---
+client_id: client_id
+region: ap-northeast-1
+services:
+- EC2
+- RDS
+- ELB
+- ElasticSearch
+- Lambda
+elasticsearch_domain: sauron

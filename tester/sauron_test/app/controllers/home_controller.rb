@@ -6,7 +6,7 @@ class HomeController < ApplicationController
   end
 
   def cpu
-    Timeout.timeout(5) do
+    Timeout.timeout(1) do
       a = 1
       a += 1 while true
     end rescue nil
@@ -15,7 +15,7 @@ class HomeController < ApplicationController
   end
 
   def disk
-    Timeout.timeout(5) do
+    Timeout.timeout(1) do
       while true
         str = "test string"
         str *= 100000
@@ -29,7 +29,7 @@ class HomeController < ApplicationController
   end
 
   def network
-    Timeout.timeout(5) do
+    Timeout.timeout(1) do
       while true
         open("https://images.unsplash.com/photo-1464013778555-8e723c2f01f8?fm=png")
       end
@@ -39,7 +39,7 @@ class HomeController < ApplicationController
   end
 
   def database
-    Timeout.timeout(2) do
+    Timeout.timeout(1) do
       TestModel.create(test_string: SecureRandom.hex.first(10), test_integer: rand(1000000))
     end rescue nil
 

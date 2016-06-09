@@ -40,7 +40,9 @@ class HomeController < ApplicationController
 
   def database
     Timeout.timeout(1) do
-      TestModel.create(test_string: SecureRandom.hex.first(10), test_integer: rand(1000000))
+      while true
+        TestModel.create(test_string: SecureRandom.hex.first(10), test_integer: rand(1000000))
+      end
     end rescue nil
 
     head :ok

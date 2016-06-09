@@ -1,13 +1,14 @@
 # require 'json'
 # require 'factory_girl'
-# require 'elasticsearch'
 # require 'thread'
 
-require 'pry'
+# require 'pry'
 require 'thor'
 require 'yaml'
 require 'aws-sdk'
+require 'elasticsearch'
 require 'active_support/all'
+require 'json'
 # require 'net/ssh'
 # require 'net/http'
 
@@ -30,12 +31,12 @@ class SauronInstaller < Thor
     add_dashboard_to_kibana
   end
 
-  desc 'test --options', 'install sauron'
-  def test
+  desc 'pry --options', 'install sauron'
+  def pry
     apply_config
 
-    link_lambda_with_cloudwatch
-   # binding.pry
+    # link_lambda_with_cloudwatch
+    # binding.pry
   end
 
   private
@@ -84,14 +85,14 @@ class SauronInstaller < Thor
     '''
 
     begin
-      es.describe_elasticsearch_domain({
+      aws_es.describe_elasticsearch_domain({
         domain_name: config["elasticsearch_domain"]
       })
 
       puts "Elasticsearch Domain : #{config["elasticsearch_domain"]} already exist."
       puts "Use #{config["elasticsearch_domain"]} Elasticsearch instance"
     rescue Aws::ElasticsearchService::Errors::ResourceNotFoundException => _
-      es.create_elasticsearch_domain({
+      aws_es.create_elasticsearch_domain({
         domain_name: config["elasticsearch_domain"],
         elasticsearch_cluster_config: {
           instance_type: "t2.micro.elasticsearch",
@@ -220,6 +221,16 @@ class SauronInstaller < Thor
 
   def add_dashboard_to_kibana
     puts "start add_dashboard_to_kibana"
+
+    dashboard_data = JSON.parse(File.open("dashboard.json").read)
+    bulk_data = []
+    dashboard_data.each do |d|
+      bulk_data << { index: d.slice("_index", "_type", "_id", "_score", "_version")}
+      bulk_data << d["_source"]
+    end
+
+    es.bulk body: bulk_data
+
     puts "end add_dashboard_to_kibana"
   end
 
@@ -234,12 +245,16 @@ class SauronInstaller < Thor
     @ec2 ||= Aws::EC2::Client.new
   end
 
-  def es
-    @es ||= Aws::ElasticsearchService::Client.new
+  def aws_es
+    @aws_es ||= Aws::ElasticsearchService::Client.new
   end
 
   def aws_lambda
     @aws_lambda ||= Aws::Lambda::Client.new
+  end
+
+  def es
+    @es ||= Elasticsearch::Client.new host: 'search-sauron-xjk7ro2fmqho5oiwdktffm4cca.ap-northeast-1.es.amazonaws.com:80'
   end
 
   def aws_iam

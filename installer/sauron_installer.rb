@@ -135,27 +135,22 @@ class SauronInstaller < Thor
   def upload_collector_to_lambda
     puts "start upload_collector_to_lambda"
 
-    begin
-      policy_document = '''
-      {
-        "Version": "2012-10-17",
-        "Statement": [
-          {
-            "Effect": "Allow",
-            "Action": "sts:AssumeRole",
-            "Principal": {"Service": "lambda.amazonaws.com"}
-          },
-        ]
-      }
-      '''
-    rescue Aws::IAM::Errors::EntityAlreadyExists => _
-      resp = aws_iam.create_role({
-        role_name: "sauron_lambda_execution",
-        assume_role_policy_document: policy_document
-      })
-
-      puts resp
-    end
+    policy_document = '''
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": "sts:AssumeRole",
+          "Principal": {"Service": "lambda.amazonaws.com"}
+        },
+      ]
+    }
+    '''
+    aws_iam.create_role({
+      role_name: "sauron_lambda_execution",
+      assume_role_policy_document: policy_document
+    }) rescue nil
 
     use_role = aws_iam.get_role({
       role_name: "sauron_lambda_execution"
@@ -167,11 +162,11 @@ class SauronInstaller < Thor
       role: use_role.role.arn,
       handler: "index.handler",
       code: {
-        zip_file: File.open('collector.zip').read,
+        zip_file: File.open('../collector.zip').read,
       },
       description: "Sauron collector",
       timeout: 30
-    })
+    }) rescue nil
 
     puts "end upload_collector_to_lambda"
   end
@@ -184,7 +179,7 @@ class SauronInstaller < Thor
       schedule_expression: "rate(5 minutes)",
       state: "ENABLED",
       description: "Firing lambda function",
-    })
+    }) rescue nil
 
     aws_lambda.add_permission({
       function_name: "sauron",
@@ -192,7 +187,7 @@ class SauronInstaller < Thor
       action: "lambda:InvokeFunction",
       principal: "events.amazonaws.com",
       source_arn: resp.rule_arn
-    })
+    }) rescue nil
 
     info = aws_lambda.get_function({
       function_name: "sauron"
@@ -206,7 +201,7 @@ class SauronInstaller < Thor
           arn: info.configuration.function_arn
         },
       ],
-    })
+    }) rescue nil
 
     cw_event.put_events({
       entries: [
@@ -215,7 +210,8 @@ class SauronInstaller < Thor
           source:"sauron.collect"
         },
       ],
-    })
+    }) rescue nil
+
     puts "end link_lambda_with_cloudwatch"
   end
 

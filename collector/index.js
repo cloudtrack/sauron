@@ -17,7 +17,7 @@ if (config === null) {
 var aws = require('aws-sdk');
 aws.config.update({region: config.region});
 
-var credentials = new aws.Credentials("access key", "secret key")
+var credentials = new aws.Credentials(config.access_key_id, config.secret_access_key)
 
 var EC2 = new aws.EC2({credentials: credentials});
 var RDS = new aws.RDS({credentials: credentials});
@@ -104,12 +104,15 @@ function indexInstanceMetrics(instanceWithType, callback) {
       params = _.merge(params, { Dimensions: dimensions })
       CloudWatch.getMetricStatistics(params,
         function(err, data) {
-          if (err) { return callback(err) }
+          if (err) {
+            console.log("error : ", err);
+            return callback(err)
+          }
           if (data.Datapoints.length != 0) {
             var actions = makeActions(instanceWithType[0], params, data.Datapoints)
             client.bulk({ body: actions }, function(err, resp) {
               if (err)  console.log(err);
-              else      callback(null);
+              //else      callback(null);
             })
           }
         }
@@ -162,7 +165,7 @@ function filteredParamList(type) {
       namespace = 'AWS/ELB'
       break
     case 'lambda':
-      namespace: 'AWS/Lambda'
+      namespace = 'AWS/Lambda'
       break
     case 'es':
       namespace = 'AWS/ES'
@@ -192,7 +195,7 @@ function makeActions(instance, params, datapoints) {
 };
 
 function constructRDSInstanceARN(instance) {
-  return ['arn:aws:rds', process.env.AWS_REGION, '841318228822:db', instance.DBInstanceIdentifier].join(':')
+  return ['arn:aws:rds', config.region, config.client_id, 'db', instance.DBInstanceIdentifier].join(':')
 }
 
 function upsertResourceQuery(instance, type) {
@@ -232,14 +235,7 @@ function upsertResourceQuery(instance, type) {
 }
 
 function fetchEC2Resources(callback) {
-  EC2.describeInstances({
-    Filters: [
-      {
-        Name: 'tag-key',
-        Values: ['serviceId']
-      }
-    ]
-  }, function(err, data) {
+  EC2.describeInstances({}, function(err, data) {
     if (err) {
       console.log('Failed to fetch EC2 Instances', err)
       return callback(err)
@@ -266,22 +262,11 @@ function fetchRDSResources(callback) {
     }
 
     if (data.DBInstances.length !== 0) {
-      async.map(data.DBInstances, function(instance, callback) {
-        RDS.listTagsForResource({
-          ResourceName: constructRDSInstanceARN(instance)
-        }, function(err, data) {
-          if (data !== null)
-            callback(err, data.TagList)
-          else
-            callback(err)
-        })
-      }, function(err, tagLists) {
-        var instancesWithTags = _.zipWith(data.DBInstances, tagLists, function (instance, tagList) { return _.merge(instance, { Tags: tagList }) })
-        var updates = _.flatten(_.map(instancesWithTags, function (i) { return upsertResourceQuery(i, 'rds') }))
-        client.bulk({ body: updates }, function(err, resp) {
-          if (err) { return callback(err) }
-          callback(null, instancesWithTags)
-        })
+      var instances = data.DBInstances;
+      var updates = _.flatten(_.map(instances, function (i) { return upsertResourceQuery(i, 'rds') }))
+      client.bulk({ body: updates }, function(err, resp) {
+        if (err) { return callback(err) }
+        callback(null, instances)
       })
     }else {
       return callback(err);

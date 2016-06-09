@@ -47,4 +47,16 @@ class HomeController < ApplicationController
 
     head :ok
   end
+
+  def success
+    head :ok
+  end
+
+  def bad_request
+    head :bad_request
+  end
+
+  def server_error
+    head :internal_server_error
+  end
 end

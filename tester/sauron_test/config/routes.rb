@@ -5,6 +5,9 @@ Rails.application.routes.draw do
   get 'disk' => 'home#disk'
   get 'network' => 'home#network'
   get 'database' => 'home#database'
+  get 'success' => 'home#success'
+  get 'bad_request' => 'home#bad_request'
+  get 'server_error' => 'home#server_error'
 
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".

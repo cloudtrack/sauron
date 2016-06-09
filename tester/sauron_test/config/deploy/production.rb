@@ -1,4 +1,5 @@
 require 'aws-sdk'
+require 'yaml'
 
 # server-based syntax
 # ======================
@@ -9,29 +10,17 @@ require 'aws-sdk'
 # server 'example.com', user: 'deploy', roles: %w{app web}, other_property: :other_value
 # server 'db.example.com', user: 'deploy', roles: %w{db}
 
+custom_env = YAML::load(File.open('env.yml'))
+set :default_env, custom_env
+set :passenger_environment_variables, custom_env
+set :passenger_restart_command, 'passenger-config restart-app'
+set :linked_files, fetch(:linked_files, []).push('config/database.yml')
 
-aws_credential = {
-  aws_access_key_id: ENV["AWS_ACCESS_KEY_ID"],
-  aws_secret_access_key: ENV["AWS_SECRET_ACCESS_KEY"]
-}
-
-Aws.config.update({
-  region: 'ap-northeast-1',
-  credentials: Aws::Credentials.new(aws_credential[:aws_access_key_id], aws_credential[:aws_secret_access_key])
-})
-
-ec2 = Aws::EC2::Client.new
-
-instances = []
-ec2.describe_instances.reservations.each do |r|
-  instances += r.instances.select{|x| x.state.code == 16}
-end
-
-instances.each_with_index do |instance, idx|
+custom_env["SERVERS"].each_with_index do |dns, idx|
   if idx == 0
-    server instance.public_dns_name, user: 'sauron', roles: %w{app web db}
+    server dns, user: 'sauron', roles: %w{app web db}
   else
-    server instance.public_dns_name, user: 'sauron', roles: %w{app web}
+    server dns, user: 'sauron', roles: %w{app web}
   end
 end
 
@@ -62,10 +51,45 @@ end
 
 # you have to change this ssh options
 set :ssh_options, {
-  keys: %w(/Users/yujun/.ssh/sauron_tokyo.pem),
   forward_agent: true,
-  auth_methods: %w(publickey)
+  auth_methods: %w(password),
+  password: 'saurontest'
 }
+
+namespace :deploy do
+
+  before :check, :add_database do
+    on roles(:all) do
+      db_config = <<-EOF
+        development:
+          adapter: mysql2
+          database: sauron_test_app_dev
+          encoding: utf8
+          username: root
+          host: localhost
+          encoding: utf8mb4
+          collation: utf8mb4_bin
+
+        production:
+          adapter: mysql2
+          database: sauron_test_app_prod
+          encoding: utf8
+          username: root
+          password: saurontest
+          host: #{custom_env["URL_DATABASE"]}
+          encoding: utf8mb4
+          collation: utf8mb4_bin
+      EOF
+
+      puts shared_path
+      within shared_path do
+        execute(:mkdir, "config") rescue nil
+      end
+      upload! StringIO.new(db_config), "#{shared_path}/config/database.yml"
+    end
+  end
+
+end
 
 # Custom SSH Options
 # ==================

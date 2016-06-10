@@ -18,17 +18,17 @@ class SauronInstaller < Thor
     apply_config
 
     # elasticsearch create loading issue"
-    #generate_elasticsearch
+    generate_elasticsearch
 
-    #add_config_to_collector
+    add_config_to_collector
 
-    #compress_collector
+    compress_collector
 
     upload_collector_to_lambda
 
     link_lambda_with_cloudwatch
 
-    #add_dashboard_to_kibana
+    add_dashboard_to_kibana
   end
 
   desc 'pry --options', 'install sauron'
@@ -135,27 +135,22 @@ class SauronInstaller < Thor
   def upload_collector_to_lambda
     puts "start upload_collector_to_lambda"
 
-    begin
-      policy_document = '''
-      {
-        "Version": "2012-10-17",
-        "Statement": [
-          {
-            "Effect": "Allow",
-            "Action": "sts:AssumeRole",
-            "Principal": {"Service": "lambda.amazonaws.com"}
-          },
-        ]
-      }
-      '''
-    rescue Aws::IAM::Errors::EntityAlreadyExists => _
-      resp = aws_iam.create_role({
-        role_name: "sauron_lambda_execution",
-        assume_role_policy_document: policy_document
-      })
-
-      puts resp
-    end
+    policy_document = '''
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": "sts:AssumeRole",
+          "Principal": {"Service": "lambda.amazonaws.com"}
+        },
+      ]
+    }
+    '''
+    aws_iam.create_role({
+      role_name: "sauron_lambda_execution",
+      assume_role_policy_document: policy_document
+    }) rescue nil
 
     use_role = aws_iam.get_role({
       role_name: "sauron_lambda_execution"
@@ -184,7 +179,7 @@ class SauronInstaller < Thor
       schedule_expression: "rate(5 minutes)",
       state: "ENABLED",
       description: "Firing lambda function",
-    })
+    }) rescue nil
 
     aws_lambda.add_permission({
       function_name: "sauron",
@@ -192,7 +187,7 @@ class SauronInstaller < Thor
       action: "lambda:InvokeFunction",
       principal: "events.amazonaws.com",
       source_arn: resp.rule_arn
-    })
+    }) rescue nil
 
     info = aws_lambda.get_function({
       function_name: "sauron"
@@ -206,7 +201,7 @@ class SauronInstaller < Thor
           arn: info.configuration.function_arn
         },
       ],
-    })
+    }) rescue nil
 
     now = Time.now
     resp = cw_event.put_events({
@@ -216,7 +211,7 @@ class SauronInstaller < Thor
           source: "target:event2lambda"
         },
       ],
-    })
+    }) rescue nil
 
     puts "end link_lambda_with_cloudwatch"
   end

@@ -13,6 +13,7 @@ AMI_ID = "ami-b45ab3d5"
 RDS_IDENTIFIER = "sauron-test"
 ELB_NAME = "sauron-test"
 SECURITY_GROUP_NAME = "sauron-test"
+EC2_INSTANCES_COUNT = 20
 
 class SauronTester < Thor
   desc 'run_test --options', 'run tester'
@@ -48,15 +49,11 @@ class SauronTester < Thor
     binding.pry
   end
 
-  desc 'deploy --options', 'deploy'
-  def deploy
+  desc 'simulate --options', 'simulate'
+  def simulate
     apply_config
 
-    @ec2_instances = current_ec2_instances
-
-    deploy_sauron_test_rails_app
-
-    attach_ec2_instances_to_elb
+    simulate_app_situation
   end
 
   desc 'shut_down --options', 'Shut down instances'
@@ -403,8 +400,8 @@ class SauronTester < Thor
       dry_run: false,
       security_groups: [SECURITY_GROUP_NAME],
       image_id: AMI_ID, # required
-      min_count: 20, # required
-      max_count: 20, # required
+      min_count: EC2_INSTANCES_COUNT, # required
+      max_count: EC2_INSTANCES_COUNT, # required
       instance_type: "t2.micro",
       monitoring: {
         enabled: true, # required

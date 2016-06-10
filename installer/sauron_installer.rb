@@ -18,17 +18,17 @@ class SauronInstaller < Thor
     apply_config
 
     # elasticsearch create loading issue"
-    generate_elasticsearch
+    #generate_elasticsearch
 
-    add_config_to_collector
+    #add_config_to_collector
 
-    compress_collector
+    #compress_collector
 
     upload_collector_to_lambda
 
     link_lambda_with_cloudwatch
 
-    add_dashboard_to_kibana
+    #add_dashboard_to_kibana
   end
 
   desc 'pry --options', 'install sauron'
@@ -167,10 +167,10 @@ class SauronInstaller < Thor
       role: use_role.role.arn,
       handler: "index.handler",
       code: {
-        zip_file: File.open('collector.zip').read,
+        zip_file: File.open('../collector.zip').read,
       },
       description: "Sauron collector",
-      timeout: 30
+      timeout: 20
     })
 
     puts "end upload_collector_to_lambda"
@@ -180,7 +180,7 @@ class SauronInstaller < Thor
     puts "start link_lambda_with_cloudwatch"
 
     resp = cw_event.put_rule({
-      name: "sauron.collect",
+      name: "sauron_collect",
       schedule_expression: "rate(5 minutes)",
       state: "ENABLED",
       description: "Firing lambda function",
@@ -188,7 +188,7 @@ class SauronInstaller < Thor
 
     aws_lambda.add_permission({
       function_name: "sauron",
-      statement_id: "1q2w3e4r",
+      statement_id: "1",
       action: "lambda:InvokeFunction",
       principal: "events.amazonaws.com",
       source_arn: resp.rule_arn
@@ -199,23 +199,25 @@ class SauronInstaller < Thor
     })
 
     cw_event.put_targets({
-      rule: "sauron.collect",
+      rule: "sauron_collect",
       targets: [
         {
-          id: "1q2w3e4r",
+          id: "event2lambda",
           arn: info.configuration.function_arn
         },
       ],
     })
 
-    cw_event.put_events({
+    now = Time.now
+    resp = cw_event.put_events({
       entries: [
         {
-          time: Time.now,
-          source:"sauron.collect"
+          time: now,
+          source: "target:event2lambda"
         },
       ],
     })
+
     puts "end link_lambda_with_cloudwatch"
   end
 
